@@ -12,43 +12,44 @@ import (
 
 func main() {
 	// Local cache
-	cacheConfig := repositories.CacheConfig{
+	cacheRepository := repositories.NewCache(repositories.CacheConfig{
 		MaxSize:      100000,
 		ItemsToPrune: 100,
 		Duration:     30 * time.Second,
-	}
+	})
 
 	// Mongo
-	mongoConfig := repositories.MongoConfig{
-		Host:       "localhost",
+	mainRepository := repositories.NewMongo(repositories.MongoConfig{
+		Host:       "mongo",
 		Port:       "27017",
 		Username:   "root",
 		Password:   "root",
 		Database:   "hotels-api",
 		Collection: "hotels",
-	}
+	})
 
 	// Rabbit
-	rabbitConfig := queues.RabbitConfig{
-		Username:  "user",
-		Password:  "password",
-		Host:      "localhost",
+	eventsQueue := queues.NewRabbit(queues.RabbitConfig{
+		Host:      "rabbitmq",
 		Port:      "5672",
+		Username:  "root",
+		Password:  "root",
 		QueueName: "hotels-news",
-	}
-	eventsQueue := queues.NewRabbit(rabbitConfig)
+	})
 
-	// Dependencies
-	mainRepository := repositories.NewMongo(mongoConfig)
-	cacheRepository := repositories.NewCache(cacheConfig)
+	// Services
 	service := services.NewService(mainRepository, cacheRepository, eventsQueue)
+
+	// Controllers
 	controller := controllers.NewController(service)
 
 	// Router
 	router := gin.Default()
 	router.GET("/hotels/:id", controller.GetHotelByID)
 	router.POST("/hotels", controller.Create)
-	if err := router.Run(":8080"); err != nil {
+	router.PUT("/hotels/:id", controller.Update)
+	router.DELETE("/hotels/:id", controller.Delete)
+	if err := router.Run(":8081"); err != nil {
 		log.Fatalf("error running application: %w", err)
 	}
 }
