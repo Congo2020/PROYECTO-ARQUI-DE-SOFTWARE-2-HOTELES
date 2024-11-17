@@ -3,10 +3,11 @@ package users
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	hotelsDomain "search-api/domain/hotels"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Service interface {
@@ -23,11 +24,13 @@ func NewController(service Service) Controller {
 	}
 }
 
+
+// Funcion para buscar hoteles en Solr
 func (controller Controller) Search(c *gin.Context) {
-	// Parse query from URL
+	// Saca el query de la URL
 	query := c.Query("q")
 
-	// Parse offset from URL
+	// Saca el offset de la URL
 	offset, err := strconv.Atoi(c.Query("offset"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -36,7 +39,7 @@ func (controller Controller) Search(c *gin.Context) {
 		return
 	}
 
-	// Parse limit from URL
+	// Saca el limit de la URL
 	limit, err := strconv.Atoi(c.Query("limit"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -45,7 +48,7 @@ func (controller Controller) Search(c *gin.Context) {
 		return
 	}
 
-	// Invoke service
+	// Llama a la funcion de busqueda de hoteles del servicio
 	hotels, err := controller.service.Search(c.Request.Context(), query, offset, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -54,6 +57,6 @@ func (controller Controller) Search(c *gin.Context) {
 		return
 	}
 
-	// Send response
+	// Devuelve los hoteles encontrados
 	c.JSON(http.StatusOK, hotels)
 }

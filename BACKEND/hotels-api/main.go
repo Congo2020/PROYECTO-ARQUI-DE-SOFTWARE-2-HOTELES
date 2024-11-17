@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"hotels-api/clients/queues"
 	controllers "hotels-api/controllers/hotels"
 	repositories "hotels-api/repositories/hotels"
 	services "hotels-api/services/hotels"
 	"log"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -25,10 +26,12 @@ func main() {
 		Username:   "root",
 		Password:   "root",
 		Database:   "hotels-api",
-		Collection: "hotels",
+		Collection_hotels: "hotels",
+		Collection_reservations: "reservations",
 	})
 
 	// Rabbit
+	//Este es el que carga a la cola de rabbit
 	eventsQueue := queues.NewRabbit(queues.RabbitConfig{
 		Host:      "rabbitmq",
 		Port:      "5672",
@@ -44,6 +47,7 @@ func main() {
 	controller := controllers.NewController(service)
 
 	// Router
+	// Rutea las peticiones a los controladores
 	router := gin.Default()
 	router.GET("/hotels/:id", controller.GetHotelByID)
 	router.POST("/hotels", controller.Create)

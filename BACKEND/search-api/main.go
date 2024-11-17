@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
 	"search-api/clients/queues"
 	controllers "search-api/controllers/search"
 	repositories "search-api/repositories/hotels"
 	services "search-api/services/search"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -18,6 +19,7 @@ func main() {
 	})
 
 	// Rabbit
+	//Este es el que consume de la cola de rabbit
 	eventsQueue := queues.NewRabbit(queues.RabbitConfig{
 		Host:      "rabbitmq",
 		Port:      "5672",

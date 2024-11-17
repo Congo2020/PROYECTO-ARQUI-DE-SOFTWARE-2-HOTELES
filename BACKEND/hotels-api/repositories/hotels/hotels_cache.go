@@ -3,9 +3,10 @@ package hotels
 import (
 	"context"
 	"fmt"
-	"github.com/karlseguin/ccache"
 	hotelsDAO "hotels-api/dao/hotels"
 	"time"
+
+	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -23,6 +24,8 @@ type Cache struct {
 	duration time.Duration
 }
 
+
+//Crea una nueva instancia de Cache
 func NewCache(config CacheConfig) Cache {
 	client := ccache.New(ccache.Configure().
 		MaxSize(config.MaxSize).
@@ -33,12 +36,17 @@ func NewCache(config CacheConfig) Cache {
 	}
 }
 
+//Obtiene un hotel por su ID de la cache
 func (repository Cache) GetHotelByID(ctx context.Context, id string) (hotelsDAO.Hotel, error) {
+	//Crea la llave para buscar el hotel
 	key := fmt.Sprintf(keyFormat, id)
+	//Obtiene el item de la cache
 	item := repository.client.Get(key)
+	//Si no se encuentra el item, regresa un error
 	if item == nil {
 		return hotelsDAO.Hotel{}, fmt.Errorf("not found item with key %s", key)
 	}
+	//Si el item esta expirado, regresa un error
 	if item.Expired() {
 		return hotelsDAO.Hotel{}, fmt.Errorf("item with key %s is expired", key)
 	}
@@ -46,19 +54,24 @@ func (repository Cache) GetHotelByID(ctx context.Context, id string) (hotelsDAO.
 	if !ok {
 		return hotelsDAO.Hotel{}, fmt.Errorf("error converting item with key %s", key)
 	}
+	
+	
 	return hotelDAO, nil
 }
 
+//Crea un nuevo hotel en la cache
 func (repository Cache) Create(ctx context.Context, hotel hotelsDAO.Hotel) (string, error) {
 	key := fmt.Sprintf(keyFormat, hotel.ID)
+	//Guarda el hotel en la cache
 	repository.client.Set(key, hotel, repository.duration)
 	return hotel.ID, nil
 }
 
+//Actualiza un hotel en la cache
 func (repository Cache) Update(ctx context.Context, hotel hotelsDAO.Hotel) error {
 	key := fmt.Sprintf(keyFormat, hotel.ID)
 
-	// Retrieve the current hotel data from the cache
+	// Busca el item actual en la cache y regresa un error si no se encuentra o esta expirado
 	item := repository.client.Get(key)
 	if item == nil {
 		return fmt.Errorf("hotel with ID %s not found in cache", hotel.ID)
@@ -67,13 +80,13 @@ func (repository Cache) Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 		return fmt.Errorf("item with key %s is expired", key)
 	}
 
-	// Get the current hotel data
+	// Convierte el item a un hotel
 	currentHotel, ok := item.Value().(hotelsDAO.Hotel)
 	if !ok {
 		return fmt.Errorf("error converting item with key %s", key)
 	}
 
-	// Update only the fields that are non-zero or non-empty
+	// Actualiza solo los campos que no son cero o vacios 
 	if hotel.Name != "" {
 		currentHotel.Name = hotel.Name
 	}
@@ -93,15 +106,17 @@ func (repository Cache) Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 		currentHotel.Amenities = hotel.Amenities
 	}
 
-	// Update the cache with the new hotel data and reset the expiration timer
+	// Guarda el hotel actualizado en la cache y reinicia el tiempo de expiracion
 	repository.client.Set(key, currentHotel, repository.duration)
 
+	//Devuelve nil si no hay errores
 	return nil
 }
 
+//Elimina un hotel de la cache
 func (repository Cache) Delete(ctx context.Context, id string) error {
 	key := fmt.Sprintf(keyFormat, id)
-	// Remove the item from the cache
+	// Elimina el hotel de la cache
 	repository.client.Delete(key)
 	return nil
 }

@@ -3,12 +3,13 @@ package hotels
 import (
 	"context"
 	"fmt"
+	hotelsDAO "hotels-api/dao/hotels"
+	"log"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	hotelsDAO "hotels-api/dao/hotels"
-	"log"
 )
 
 type MongoConfig struct {
@@ -17,29 +18,37 @@ type MongoConfig struct {
 	Username   string
 	Password   string
 	Database   string
-	Collection string
+	Collection_hotels string
+	Collection_reservations string
 }
 
 type Mongo struct {
 	client     *mongo.Client
 	database   string
-	collection string
+	collection_hotel string
+	collection_reservation string
 }
 
 const (
 	connectionURI = "mongodb://%s:%s"
 )
 
+
+//Crea una nueva instancia de Mongo
 func NewMongo(config MongoConfig) Mongo {
 	credentials := options.Credential{
 		Username: config.Username,
 		Password: config.Password,
 	}
 
+	//Crea el contexto
 	ctx := context.Background()
+	//Crea la URI de conexion
 	uri := fmt.Sprintf(connectionURI, config.Host, config.Port)
+	//Crea la configuracion de conexion
 	cfg := options.Client().ApplyURI(uri).SetAuth(credentials)
 
+	//Crea la conexion a MongoDB
 	client, err := mongo.Connect(ctx, cfg)
 	if err != nil {
 		log.Panicf("error connecting to mongo DB: %v", err)
@@ -48,22 +57,27 @@ func NewMongo(config MongoConfig) Mongo {
 	return Mongo{
 		client:     client,
 		database:   config.Database,
-		collection: config.Collection,
+		collection_hotel: config.Collection_hotels,
+		collection_reservation: config.Collection_reservations,
 	}
 }
 
+//Obtiene un hotel por su ID de MongoDB
 func (repository Mongo) GetHotelByID(ctx context.Context, id string) (hotelsDAO.Hotel, error) {
-	// Get from MongoDB
+
+	//Crea el ObjectID de MongoDB a partir del ID para buscar el documento
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return hotelsDAO.Hotel{}, fmt.Errorf("error converting id to mongo ID: %w", err)
 	}
-	result := repository.client.Database(repository.database).Collection(repository.collection).FindOne(ctx, bson.M{"_id": objectID})
+
+	// Buscar el documento en MongoDB por su ID
+	result := repository.client.Database(repository.database).Collection(repository.collection_hotel).FindOne(ctx, bson.M{"_id": objectID})
 	if result.Err() != nil {
 		return hotelsDAO.Hotel{}, fmt.Errorf("error finding document: %w", result.Err())
 	}
 
-	// Convert document to DAO
+	// Decodificar el resultado
 	var hotelDAO hotelsDAO.Hotel
 	if err := result.Decode(&hotelDAO); err != nil {
 		return hotelsDAO.Hotel{}, fmt.Errorf("error decoding result: %w", err)
@@ -71,21 +85,26 @@ func (repository Mongo) GetHotelByID(ctx context.Context, id string) (hotelsDAO.
 	return hotelDAO, nil
 }
 
+//Crea un nuevo hotel en MongoDB
 func (repository Mongo) Create(ctx context.Context, hotel hotelsDAO.Hotel) (string, error) {
-	// Insert into mongo
-	result, err := repository.client.Database(repository.database).Collection(repository.collection).InsertOne(ctx, hotel)
+	// Insertar el documento en MongoDB
+	result, err := repository.client.Database(repository.database).Collection(repository.collection_hotel).InsertOne(ctx, hotel)
 	if err != nil {
 		return "", fmt.Errorf("error creating document: %w", err)
 	}
 
-	// Get inserted ID
+	// Saca el ObjectID del resultado de la insercion
 	objectID, ok := result.InsertedID.(primitive.ObjectID)
 	if !ok {
 		return "", fmt.Errorf("error converting mongo ID to object ID")
 	}
+
+	// Regresa el ID del documento insertado
 	return objectID.Hex(), nil
 }
 
+
+//Actualiza un hotel en MongoDB
 func (repository Mongo) Update(ctx context.Context, hotel hotelsDAO.Hotel) error {
 	// Convert hotel ID to MongoDB ObjectID
 	objectID, err := primitive.ObjectIDFromHex(hotel.ID)
@@ -93,10 +112,10 @@ func (repository Mongo) Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 		return fmt.Errorf("error converting id to mongo ID: %w", err)
 	}
 
-	// Create an update document
+	// Crea un mapa con los campos a actualizar
 	update := bson.M{}
 
-	// Only set the fields that are not empty or their default value
+	// Actualiza solo los campos que no son cero o vacios
 	if hotel.Name != "" {
 		update["name"] = hotel.Name
 	}
@@ -109,30 +128,32 @@ func (repository Mongo) Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 	if hotel.State != "" {
 		update["state"] = hotel.State
 	}
-	if hotel.Rating != 0 { // Assuming 0 is the default for Rating
+	if hotel.Rating != 0 { // Asumiendo que 0 es el valor por defecto para Rating
 		update["rating"] = hotel.Rating
 	}
-	if len(hotel.Amenities) > 0 { // Assuming empty slice is the default for Amenities
+	if len(hotel.Amenities) > 0 { // Asumiendo que un slice vacio es el valor por defecto para Amenities
 		update["amenities"] = hotel.Amenities
 	}
 
-	// Update the document in MongoDB
+	// Actualiza el documento en MongoDB
 	if len(update) == 0 {
 		return fmt.Errorf("no fields to update for hotel ID %s", hotel.ID)
 	}
 
+	// Saca el objectID del documento y actualiza los campos en MongoDB
 	filter := bson.M{"_id": objectID}
-	result, err := repository.client.Database(repository.database).Collection(repository.collection).UpdateOne(ctx, filter, bson.M{"$set": update})
+	result, err := repository.client.Database(repository.database).Collection(repository.collection_hotel).UpdateOne(ctx, filter, bson.M{"$set": update})
 	if err != nil {
 		return fmt.Errorf("error updating document: %w", err)
 	}
 	if result.MatchedCount == 0 {
 		return fmt.Errorf("no document found with ID %s", hotel.ID)
 	}
-
+	
 	return nil
 }
 
+//Elimina un hotel de MongoDB
 func (repository Mongo) Delete(ctx context.Context, id string) error {
 	// Convert hotel ID to MongoDB ObjectID
 	objectID, err := primitive.ObjectIDFromHex(id)
@@ -140,9 +161,9 @@ func (repository Mongo) Delete(ctx context.Context, id string) error {
 		return fmt.Errorf("error converting id to mongo ID: %w", err)
 	}
 
-	// Delete the document from MongoDB
+	// Elimina el documento de MongoDB
 	filter := bson.M{"_id": objectID}
-	result, err := repository.client.Database(repository.database).Collection(repository.collection).DeleteOne(ctx, filter)
+	result, err := repository.client.Database(repository.database).Collection(repository.collection_hotel).DeleteOne(ctx, filter)
 	if err != nil {
 		return fmt.Errorf("error deleting document: %w", err)
 	}

@@ -20,6 +20,7 @@ type HTTP struct {
 
 func NewHTTP(config HTTPConfig) HTTP {
 	return HTTP{
+		//Aca creamos la funcion para que vaya a buscar el hotel por id
 		baseURL: func(hotelID string) string {
 			return fmt.Sprintf("http://%s:%s/hotels/%s", config.Host, config.Port, hotelID)
 		},
@@ -31,13 +32,15 @@ func (repository HTTP) GetHotelByID(ctx context.Context, id string) (hotelsDomai
 	if err != nil {
 		return hotelsDomain.Hotel{}, fmt.Errorf("Error fetching hotel (%s): %w\n", id, err)
 	}
+	// Defer hace que se ejecute la funcion Close() cuando la funcion GetHotelByID termine
+	//La parte de body.Close() es para cerrar el body de la respuesta
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return hotelsDomain.Hotel{}, fmt.Errorf("Failed to fetch hotel (%s): received status code %d\n", id, resp.StatusCode)
 	}
 
-	// Read the response body
+	// Lee el body de la respuesta
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return hotelsDomain.Hotel{}, fmt.Errorf("Error reading response body for hotel (%s): %w\n", id, err)
