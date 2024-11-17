@@ -5,6 +5,7 @@ import (
 	"fmt"
 	hotelsDAO "hotels-api/dao/hotels"
 	"log"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -128,6 +129,27 @@ func (repository Mongo) Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 	if hotel.State != "" {
 		update["state"] = hotel.State
 	}
+	if hotel.Country != "" {
+		update["country"] = hotel.Country
+	}
+	if hotel.Phone != "" {
+		update["phone"] = hotel.Phone
+	}
+	if hotel.Email != "" {
+		update["email"] = hotel.Email
+	}
+	if hotel.PricePerNight != 0 { // Asumiendo que 0 es el valor por defecto para PricePerNight
+		update["price_per_night"] = hotel.PricePerNight
+	}
+	if hotel.AvaiableRooms != 0 { // Asumiendo que 0 es el valor por defecto para AvaiableRooms
+		update["avaiable_rooms"] = hotel.AvaiableRooms
+	}
+	if !hotel.CheckInTime.IsZero() { // Asumiendo que una fecha cero es el valor por defecto para CheckInTime
+		update["check_in_time"] = hotel.CheckInTime
+	}
+	if !hotel.CheckOutTime.IsZero() { // Asumiendo que una fecha cero es el valor por defecto para CheckOutTime
+		update["check_out_time"] = hotel.CheckOutTime
+	}
 	if hotel.Rating != 0 { // Asumiendo que 0 es el valor por defecto para Rating
 		update["rating"] = hotel.Rating
 	}
@@ -172,4 +194,204 @@ func (repository Mongo) Delete(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+
+//Funcion para crear una reserva en MongoDB
+func (repository Mongo) CreateReservation(ctx context.Context, reservation hotelsDAO.Reservation) (string, error) {
+	// Insertar el documento en MongoDB
+	result, err := repository.client.Database(repository.database).Collection(repository.collection_reservation).InsertOne(ctx, reservation)
+	if err != nil {
+		return "", fmt.Errorf("error creating document: %w", err)
+	}
+
+	// Saca el ObjectID del resultado de la insercion
+	objectID, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return "", fmt.Errorf("error converting mongo ID to object ID")
+	}
+
+	// Regresa el ID del documento insertado
+	return objectID.Hex(), nil
+}
+
+//Funcion para cancelar una reserva en MongoDB
+func (repository Mongo) CancelReservation(ctx context.Context, id string) error {
+	// Convert reservation ID to MongoDB ObjectID
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return fmt.Errorf("error converting id to mongo ID: %w", err)
+	}
+
+	// Elimina el documento de MongoDB
+	filter := bson.M{"_id": objectID}
+	result, err := repository.client.Database(repository.database).Collection(repository.collection_reservation).DeleteOne(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("error deleting document: %w", err)
+	}
+	if result.DeletedCount == 0 {
+		return fmt.Errorf("no document found with ID %s", id)
+	}
+
+	return nil
+}
+
+// Funcion para encontrar todas las reservas de un usuario en MongoDB
+func (repository Mongo) GetReservationsByUserID(ctx context.Context, userID string) ([]hotelsDAO.Reservation, error) {
+	// Buscar el documento en MongoDB por su ID
+	result, err := repository.client.Database(repository.database).Collection(repository.collection_reservation).Find(ctx, bson.M{"user_id": userID})
+	if err != nil {
+		return nil, fmt.Errorf("error finding document: %w", err)
+	}
+
+	// Decodificar el resultado
+	var reservations []hotelsDAO.Reservation
+	if err := result.All(ctx, &reservations); err != nil {
+		return nil, fmt.Errorf("error decoding result: %w", err)
+	}
+	return reservations, nil
+}
+
+//Funcion para encontrar las reservas de un usuario en un hotel en MongoDB
+func (repository Mongo) GetReservationsByHotelID(ctx context.Context, hotelID string) ([]hotelsDAO.Reservation, error) {
+	// Buscar el documento en MongoDB por su ID
+	result, err := repository.client.Database(repository.database).Collection(repository.collection_reservation).Find(ctx, bson.M{"hotel_id": hotelID})
+	if err != nil {
+		return nil, fmt.Errorf("error finding document: %w", err)
+	}
+
+	// Decodificar el resultado
+	var reservations []hotelsDAO.Reservation
+	if err := result.All(ctx, &reservations); err != nil {
+		return nil, fmt.Errorf("error decoding result: %w", err)
+	}
+	return reservations, nil
+}
+
+// Funcion para encontrar las reservas de un usuario en un hotel en MongoDB
+func (repository Mongo) GetReservationsByUserAndHotelID(ctx context.Context, hotelID string, userID string) ([]hotelsDAO.Reservation, error) {
+	// Buscar el documento en MongoDB por su ID
+	result, err := repository.client.Database(repository.database).Collection(repository.collection_reservation).Find(ctx, bson.M{"hotel_id": hotelID, "user_id": userID})
+	if err != nil {
+		return nil, fmt.Errorf("error finding document: %w", err)
+	}
+
+	// Decodificar el resultado
+	var reservations []hotelsDAO.Reservation
+	if err := result.All(ctx, &reservations); err != nil {
+		return nil, fmt.Errorf("error decoding result: %w", err)
+	}
+	return reservations, nil
+}
+
+
+// Funcion para calcular la dispinibilidad de multiples hoteles de forma concurrente utilizando goroutines
+// GetAvailability verifica la disponibilidad de múltiples hoteles de forma concurrente
+func (repository Mongo) GetAvailability(ctx context.Context, hotelIDs []string, checkIn, checkOut string) (map[string]bool, error) {
+    type result struct {
+        hotelID   string
+        available bool
+        err       error
+    }
+    
+    results := make(chan result, len(hotelIDs))
+    
+    // Crear un WaitGroup para esperar a que todas las goroutines terminen
+    for _, id := range hotelIDs {
+        go func(hotelID string) {
+            available, err := repository.IsHotelAvailable(ctx, hotelID, checkIn, checkOut)
+            results <- result{
+                hotelID:   hotelID,
+                available: available,
+                err:       err,
+            }
+        }(id)
+    }
+
+    // Recolectar resultados
+    availability := make(map[string]bool)
+    for i := 0; i < len(hotelIDs); i++ {
+        r := <-results
+        if r.err != nil {
+            return nil, fmt.Errorf("error checking availability for hotel %s: %w", r.hotelID, r.err)
+        }
+        availability[r.hotelID] = r.available
+    }
+
+    return availability, nil
+}
+
+// IsHotelAvailable verifica la disponibilidad de un hotel para un rango de fechas
+func (repository Mongo) IsHotelAvailable(ctx context.Context, hotelID, checkIn, checkOut string) (bool, error) {
+    // Convertir el ID del hotel a ObjectID
+    objectID, err := primitive.ObjectIDFromHex(hotelID)
+    if err != nil {
+        return false, fmt.Errorf("error converting hotel ID to object ID: %w", err)
+    }
+
+    // Convertir las fechas
+    checkInTime, err := time.Parse("2006-01-02", checkIn)
+    if err != nil {
+        return false, fmt.Errorf("error parsing check-in date: %w", err)
+    }
+    checkOutTime, err := time.Parse("2006-01-02", checkOut)
+    if err != nil {
+        return false, fmt.Errorf("error parsing check-out date: %w", err)
+    }
+
+    // Primero obtener el hotel y su capacidad en una sola consulta
+    var hotel hotelsDAO.Hotel
+    err = repository.client.Database(repository.database).Collection(repository.collection_hotel).
+        FindOne(ctx, bson.M{"_id": objectID}).
+        Decode(&hotel)
+    if err != nil {
+        return false, fmt.Errorf("error finding hotel: %w", err)
+    }
+
+    // Agregar pipeline para contar reservas por día
+    pipeline := []bson.M{
+        {
+            "$match": bson.M{
+                "hotel_id": hotelID,
+                "$or": []bson.M{
+                    {"check_in": bson.M{"$lt": checkOutTime, "$gte": checkInTime}},
+                    {"check_out": bson.M{"$gt": checkInTime, "$lte": checkOutTime}},
+                    {
+                        "$and": []bson.M{
+                            {"check_in": bson.M{"$lte": checkInTime}},
+                            {"check_out": bson.M{"$gte": checkOutTime}},
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "$group": bson.M{
+                "_id": nil,
+                "count": bson.M{"$sum": 1},
+            },
+        },
+    }
+
+    // Ejecutar el pipeline
+    cursor, err := repository.client.Database(repository.database).
+        Collection(repository.collection_reservation).
+        Aggregate(ctx, pipeline)
+    if err != nil {
+        return false, fmt.Errorf("error aggregating reservations: %w", err)
+    }
+    defer cursor.Close(ctx)
+
+    // Obtener el resultado
+    var result struct {
+        Count int `bson:"count"`
+    }
+    if cursor.Next(ctx) {
+        if err := cursor.Decode(&result); err != nil {
+            return false, fmt.Errorf("error decoding result: %w", err)
+        }
+    }
+
+    // Verificar disponibilidad
+    return result.Count < hotel.AvaiableRooms, nil
 }

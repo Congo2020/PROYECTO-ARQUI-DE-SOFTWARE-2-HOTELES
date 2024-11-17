@@ -11,10 +11,11 @@ type Hotel struct {
 	Country   string   `bson:"country"`
 	Phone     string   `bson:"phone"`
 	Email     string   `bson:"email"`
+	PricePerNight float64 `bson:"price_per_night"`
 	Rating    float64  `bson:"rating"`
-	avaiable_rooms int `bson:"avaiable_rooms"`
-	check_in_time time.Time `bson:"check_in_time"`
-	check_out_time time.Time `bson:"check_out_time"`
+	AvaiableRooms int `bson:"avaiable_rooms"`
+	CheckInTime time.Time `bson:"check_in_time"`
+	CheckOutTime time.Time `bson:"check_out_time"`
 	Amenities []string `bson:"amenities"`
 }
 

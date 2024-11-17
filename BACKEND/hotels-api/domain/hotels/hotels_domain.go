@@ -11,6 +11,7 @@ type Hotel struct {
 	Country string `json:"country"`
 	Phone string `json:"phone"`
 	Email string `json:"email"`
+	PricePerNight float64 `json:"price_per_night"`
 	Rating float64 `json:"rating"`
 	AvaiableRooms int `json:"avaiable_rooms"`
 	CheckInTime time.Time `json:"check_in_time"`

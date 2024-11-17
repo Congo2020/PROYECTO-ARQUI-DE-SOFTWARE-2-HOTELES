@@ -13,6 +13,13 @@ type Repository interface {
 	Create(ctx context.Context, hotel hotelsDAO.Hotel) (string, error)
 	Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 	Delete(ctx context.Context, id string) error
+	CreateReservation(ctx context.Context, reservation hotelsDAO.Reservation) (string, error)
+	CancelReservation(ctx context.Context, id string) error
+	GetReservationsByHotelID(ctx context.Context, hotelID string) ([]hotelsDAO.Reservation, error)
+	GetReservationsByUserAndHotelID(ctx context.Context, hotelID string, userID string) ([]hotelsDAO.Reservation, error)
+	GetReservationsByUserID(ctx context.Context, userID string) ([]hotelsDAO.Reservation, error)
+	GetAvailability(ctx context.Context, hotelIDs []string, checkIn, checkOut string) (map[string]bool, error)
+
 }
 
 
@@ -59,7 +66,14 @@ func (service Service) GetHotelByID(ctx context.Context, id string) (hotelsDomai
 		Address:   hotelDAO.Address,
 		City:      hotelDAO.City,
 		State:     hotelDAO.State,
+		Country:   hotelDAO.Country,
+		Phone:     hotelDAO.Phone,
+		Email:     hotelDAO.Email,
+		PricePerNight: hotelDAO.PricePerNight,
 		Rating:    hotelDAO.Rating,
+		AvaiableRooms: hotelDAO.AvaiableRooms,
+		CheckInTime: hotelDAO.CheckInTime,
+		CheckOutTime: hotelDAO.CheckOutTime,
 		Amenities: hotelDAO.Amenities,
 	}, nil
 }
@@ -74,7 +88,14 @@ func (service Service) Create(ctx context.Context, hotel hotelsDomain.Hotel) (st
 		Address:   hotel.Address,
 		City:      hotel.City,
 		State:     hotel.State,
+		Country: hotel.Country,
+		Phone: hotel.Phone,
+		Email: hotel.Email,
+		PricePerNight: hotel.PricePerNight,
 		Rating:    hotel.Rating,
+		AvaiableRooms: hotel.AvaiableRooms,
+		CheckInTime: hotel.CheckInTime,
+		CheckOutTime: hotel.CheckOutTime,
 		Amenities: hotel.Amenities,
 	}
 	// Crea el hotel en el repositorio principal (base de datos -> MongoDB)
@@ -108,7 +129,14 @@ func (service Service) Update(ctx context.Context, hotel hotelsDomain.Hotel) err
 		Address:   hotel.Address,
 		City:      hotel.City,
 		State:     hotel.State,
+		Country: hotel.Country,
+		Phone: hotel.Phone,
+		Email: hotel.Email,
+		PricePerNight: hotel.PricePerNight,
 		Rating:    hotel.Rating,
+		AvaiableRooms: hotel.AvaiableRooms,
+		CheckInTime: hotel.CheckInTime,
+		CheckOutTime: hotel.CheckOutTime,
 		Amenities: hotel.Amenities,
 	}
 

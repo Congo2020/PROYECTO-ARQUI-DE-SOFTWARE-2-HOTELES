@@ -99,6 +99,27 @@ func (repository Cache) Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 	if hotel.State != "" {
 		currentHotel.State = hotel.State
 	}
+	if hotel.Country != "" {
+		currentHotel.Country = hotel.Country
+	}
+	if hotel.Phone != "" {
+		currentHotel.Phone = hotel.Phone
+	}
+	if hotel.Email != "" {
+		currentHotel.Email = hotel.Email
+	}
+	if hotel.PricePerNight != 0 {
+		currentHotel.PricePerNight = hotel.PricePerNight
+	}
+	if hotel.AvaiableRooms != 0 {
+		currentHotel.AvaiableRooms = hotel.AvaiableRooms
+	}
+	if !hotel.CheckInTime.IsZero() {
+		currentHotel.CheckInTime = hotel.CheckInTime
+	}
+	if !hotel.CheckOutTime.IsZero() {
+		currentHotel.CheckOutTime = hotel.CheckOutTime
+	}
 	if hotel.Rating != 0 {
 		currentHotel.Rating = hotel.Rating
 	}
@@ -119,4 +140,160 @@ func (repository Cache) Delete(ctx context.Context, id string) error {
 	// Elimina el hotel de la cache
 	repository.client.Delete(key)
 	return nil
+}
+
+
+// Crea una reserva en la cache
+func (repository Cache) CreateReservation(ctx context.Context, reservation hotelsDAO.Reservation) (string, error) {
+    key := fmt.Sprintf("reservation:%s", reservation.ID)
+    repository.client.Set(key, reservation, repository.duration)
+    return reservation.ID, nil
+}
+
+// Cancela una reserva en la cache
+func (repository Cache) CancelReservation(ctx context.Context, id string) error {
+    key := fmt.Sprintf("reservation:%s", id)
+    repository.client.Delete(key)
+    return nil
+}
+
+// Obtiene las reservas por ID de hotel y usuario de la cache
+func (repository Cache) GetReservationsByUserAndHotelID(ctx context.Context, hotelID string, userID string) ([]hotelsDAO.Reservation, error) {
+    key := fmt.Sprintf("reservations:hotel:%s:user:%s", hotelID, userID)
+    item := repository.client.Get(key)
+    if item == nil {
+        return nil, fmt.Errorf("not found item with key %s", key)
+    }
+    if item.Expired() {
+        return nil, fmt.Errorf("item with key %s is expired", key)
+    }
+    reservations, ok := item.Value().([]hotelsDAO.Reservation)
+    if !ok {
+        return nil, fmt.Errorf("error converting item with key %s", key)
+    }
+    return reservations, nil
+}
+
+// Obtiene las reservas por ID de hotel de la cache
+func (repository Cache) GetReservationsByHotelID(ctx context.Context, hotelID string) ([]hotelsDAO.Reservation, error) {
+	key := fmt.Sprintf("reservations:hotel:%s", hotelID)
+	item := repository.client.Get(key)
+	if item == nil {
+		return nil, fmt.Errorf("not found item with key %s", key)
+	}
+	if item.Expired() {
+		return nil, fmt.Errorf("item with key %s is expired", key)
+	}
+	reservations, ok := item.Value().([]hotelsDAO.Reservation)
+	if !ok {
+		return nil, fmt.Errorf("error converting item with key %s", key)
+	}
+	return reservations, nil
+}
+
+// Obtiene las reservas por ID de usuario de la cache
+func (repository Cache) GetReservationsByUserID(ctx context.Context, userID string) ([]hotelsDAO.Reservation, error) {
+    key := fmt.Sprintf("reservations:user:%s", userID)
+    item := repository.client.Get(key)
+    if item == nil {
+        return nil, fmt.Errorf("not found item with key %s", key)
+    }
+    if item.Expired() {
+        return nil, fmt.Errorf("item with key %s is expired", key)
+    }
+    reservations, ok := item.Value().([]hotelsDAO.Reservation)
+    if !ok {
+        return nil, fmt.Errorf("error converting item with key %s", key)
+    }
+    return reservations, nil
+}
+
+// GetAvailability verifica la disponibilidad de múltiples hoteles en caché
+func (repository Cache) GetAvailability(ctx context.Context, hotelIDs []string, checkIn, checkOut string) (map[string]bool, error) {
+    type result struct {
+        hotelID   string
+        available bool
+        err       error
+    }
+    
+    results := make(chan result, len(hotelIDs))
+
+    for _, id := range hotelIDs {
+        go func(hotelID string) {
+            available, err := repository.IsHotelAvailable(ctx, hotelID, checkIn, checkOut)
+            results <- result{
+                hotelID:   hotelID,
+                available: available,
+                err:       err,
+            }
+        }(id)
+    }
+
+    availability := make(map[string]bool)
+    for i := 0; i < len(hotelIDs); i++ {
+        r := <-results
+        if r.err != nil {
+            // En caché, podemos continuar incluso si hay error en un hotel
+            availability[r.hotelID] = false
+            continue
+        }
+        availability[r.hotelID] = r.available
+    }
+
+    return availability, nil
+}
+
+// IsHotelAvailable verifica la disponibilidad de un hotel en caché
+func (repository Cache) IsHotelAvailable(ctx context.Context, hotelID, checkIn, checkOut string) (bool, error) {
+    // Convertir fechas
+    checkInTime, err := time.Parse("2006-01-02", checkIn)
+    if err != nil {
+        return false, fmt.Errorf("error parsing check-in date: %w", err)
+    }
+    checkOutTime, err := time.Parse("2006-01-02", checkOut)
+    if err != nil {
+        return false, fmt.Errorf("error parsing check-out date: %w", err)
+    }
+
+    // Obtener hotel de caché
+    hotel, err := repository.GetHotelByID(ctx, hotelID)
+    if err != nil {
+        return false, fmt.Errorf("error getting hotel from cache: %w", err)
+    }
+
+    // Obtener reservas de caché
+    key := fmt.Sprintf("reservations:hotel:%s", hotelID)
+    item := repository.client.Get(key)
+    if item == nil || item.Expired() {
+        // Si no hay datos en caché, asumimos que no hay disponibilidad
+        // Esta es una decisión conservadora para evitar overboking
+        return false, nil
+    }
+
+    reservations, ok := item.Value().([]hotelsDAO.Reservation)
+    if !ok {
+        return false, fmt.Errorf("error converting cached reservations")
+    }
+
+    // Contar reservas por día usando un mapa
+    reservationsByDay := make(map[time.Time]int)
+    for _, reservation := range reservations {
+        // Solo considerar reservas que se solapan con el período solicitado
+        if !reservation.CheckOut.Before(checkInTime) && !reservation.CheckIn.After(checkOutTime) {
+            for date := reservation.CheckIn; !date.After(reservation.CheckOut); date = date.AddDate(0, 0, 1) {
+                if !date.Before(checkInTime) && !date.After(checkOutTime) {
+                    reservationsByDay[date]++
+                }
+            }
+        }
+    }
+
+    // Verificar disponibilidad para cada día
+    for date := checkInTime; !date.After(checkOutTime); date = date.AddDate(0, 0, 1) {
+        if reservationsByDay[date] >= hotel.AvaiableRooms {
+            return false, nil
+        }
+    }
+
+    return true, nil
 }
