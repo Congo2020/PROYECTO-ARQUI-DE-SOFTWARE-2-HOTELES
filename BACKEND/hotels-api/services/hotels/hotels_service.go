@@ -189,6 +189,7 @@ func (service Service) Delete(ctx context.Context, id string) error {
 
 func (service Service) CreateReservation(ctx context.Context, reservation hotelsDomain.Reservation) (string, error) {
 	record := hotelsDAO.Reservation{
+		HotelName: reservation.HotelName,
 		HotelID: reservation.HotelID,
 		UserID:  reservation.UserID,
 		CheckIn: reservation.CheckIn,
@@ -246,6 +247,7 @@ func (service Service) GetReservationsByHotelID(ctx context.Context, hotelID str
 	for _, reservationDAO := range reservationsDAO {
 		reservations = append(reservations, hotelsDomain.Reservation{
 			ID:       reservationDAO.ID,
+			HotelName: reservationDAO.HotelName,
 			HotelID:  reservationDAO.HotelID,
 			UserID:   reservationDAO.UserID,
 			CheckIn:  reservationDAO.CheckIn,
@@ -278,6 +280,7 @@ func (service Service) GetReservationsByUserAndHotelID(ctx context.Context, hote
 	for _, reservationDAO := range reservationsDAO {
 		reservations = append(reservations, hotelsDomain.Reservation{
 			ID:       reservationDAO.ID,
+			HotelName: reservationDAO.HotelName,
 			HotelID:  reservationDAO.HotelID,
 			UserID:   reservationDAO.UserID,
 			CheckIn:  reservationDAO.CheckIn,
@@ -310,6 +313,7 @@ func (service Service) GetReservationsByUserID(ctx context.Context, userID strin
 	for _, reservationDAO := range reservationsDAO {
 		reservations = append(reservations, hotelsDomain.Reservation{
 			ID:       reservationDAO.ID,
+			HotelName: reservationDAO.HotelName,
 			HotelID:  reservationDAO.HotelID,
 			UserID:   reservationDAO.UserID,
 			CheckIn:  reservationDAO.CheckIn,

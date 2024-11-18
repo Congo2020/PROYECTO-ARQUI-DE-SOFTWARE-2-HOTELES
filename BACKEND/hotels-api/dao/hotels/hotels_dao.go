@@ -21,6 +21,7 @@ type Hotel struct {
 
 type Reservation struct {
 	ID       string    `bson:"_id,omitempty"`
+	HotelName string   `bson:"hotel_name"`
 	HotelID  string    `bson:"hotel_id"`
 	UserID   string    `bson:"user_id"`
 	CheckIn  time.Time `bson:"check_in"`

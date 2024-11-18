@@ -63,7 +63,7 @@ func main() {
 	router.DELETE("/hotels/reservations/:id", controller.CancelReservation)
 	router.GET("/hotels/:hotel_id/reservations", controller.GetReservationsByHotelID)
 	router.GET("/users/:user_id/reservations", controller.GetReservationsByUserID)
-	router.GET("/users/:user_id/hotels/:hotel_id/reservations", controller.GetReservationsByUserAndHotelID)
+	router.GET("hotels/:hotel_id/users/:user_id/reservations", controller.GetReservationsByUserAndHotelID)
 	router.GET("/hotels/availability", controller.GetAvailability)
 	if err := router.Run(":8081"); err != nil {
 		log.Fatalf("error running application: %w", err)
