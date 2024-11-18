@@ -37,7 +37,7 @@ func NewController(service Service) Controller {
 //Funcion para obtener un hotel por ID (GET)
 func (controller Controller) GetHotelByID(ctx *gin.Context) {
 	// Valida el ID del hotel que viene en la URL
-	hotelID := strings.TrimSpace(ctx.Param("id"))
+	hotelID := strings.TrimSpace(ctx.Param("hotel_id"))
 
 	// Obtiene el hotel por ID
 	hotel, err := controller.service.GetHotelByID(ctx.Request.Context(), hotelID)
@@ -83,7 +83,7 @@ func (controller Controller) Create(ctx *gin.Context) {
 //Funcion para actualizar un hotel (PUT)
 func (controller Controller) Update(ctx *gin.Context) {
 	// Valida el ID del hotel que viene en la URL
-	id := strings.TrimSpace(ctx.Param("id"))
+	id := strings.TrimSpace(ctx.Param("hotel_id"))
 
 	// Le da formato al hotel que viene en el body de la peticiona un DAO
 	var hotel hotelsDomain.Hotel
@@ -115,7 +115,7 @@ func (controller Controller) Update(ctx *gin.Context) {
 //Funcion para eliminar un hotel (DELETE)
 func (controller Controller) Delete(ctx *gin.Context) {
 	// Valida el ID del hotel que viene en la URL
-	id := strings.TrimSpace(ctx.Param("id"))
+	id := strings.TrimSpace(ctx.Param("hotel_id"))
 
 	// Elimina el hotel
 	if err := controller.service.Delete(ctx.Request.Context(), id); err != nil {
@@ -178,7 +178,7 @@ func (controller Controller) CancelReservation(ctx *gin.Context) {
 
 func (controller Controller) GetReservationsByHotelID(ctx *gin.Context) {
 	// Valida el ID del hotel que viene en la URL
-	hotelID := strings.TrimSpace(ctx.Param("id"))
+	hotelID := strings.TrimSpace(ctx.Param("hotel_id"))
 
 	// Obtiene las reservas por ID de hotel
 	reservations, err := controller.service.GetReservationsByHotelID(ctx.Request.Context(), hotelID)
@@ -195,7 +195,7 @@ func (controller Controller) GetReservationsByHotelID(ctx *gin.Context) {
 
 func (controller Controller) GetReservationsByUserID(ctx *gin.Context) {
 	// Valida el ID del usuario que viene en la URL
-	userID := strings.TrimSpace(ctx.Param("id"))
+	userID := strings.TrimSpace(ctx.Param("user_id"))
 
 	// Obtiene las reservas por ID de usuario
 	reservations, err := controller.service.GetReservationsByUserID(ctx.Request.Context(), userID)
@@ -212,8 +212,8 @@ func (controller Controller) GetReservationsByUserID(ctx *gin.Context) {
 
 func (controller Controller) GetReservationsByUserAndHotelID(ctx *gin.Context) {
 	// Valida el ID del usuario que viene en la URL
-	userID := strings.TrimSpace(ctx.Param("userID"))
-	hotelID := strings.TrimSpace(ctx.Param("hotelID"))
+	userID := strings.TrimSpace(ctx.Param("user_id"))
+	hotelID := strings.TrimSpace(ctx.Param("hotel_id"))
 
 	// Obtiene las reservas por ID de usuario y hotel
 	reservations, err := controller.service.GetReservationsByUserAndHotelID(ctx.Request.Context(), userID, hotelID)
