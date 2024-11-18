@@ -337,23 +337,22 @@ func (repository Mongo) IsHotelAvailable(ctx context.Context, hotelID, checkIn, 
 
 	// Primero obtener el hotel y su capacidad en una sola consulta
 	var av struct {
-		AvailableRooms int64 `bson:"avaiable_rooms"`
+		AvailableRooms int32 `bson:"avaiable_rooms"`
 	}
 	err = repository.client.Database(repository.database).Collection(repository.collection_hotel).
-		FindOne(ctx, bson.M{"_id": objectID}, options.FindOne().SetProjection(bson.M{"AvailableRooms": 1, "_id": 0})).
+		FindOne(ctx, bson.M{"_id": objectID}, options.FindOne().SetProjection(bson.M{"avaiable_rooms": 1, "_id": 0})).
 		Decode(&av)
 	if err != nil {
 		return false, fmt.Errorf("error finding hotel: %w", err)
 	}
 
-    // Lista para almacenar los días
-    var days []string
+	// Lista para almacenar los días
+	var days []string
 
-    // Iterar desde checkIn hasta checkOut
-    for current := checkInTime; !current.After(checkOutTime); current = current.AddDate(0, 0, 1) {
-        days = append(days, current.Format("2006-01-02"))
-    }
-
+	// Iterar desde checkIn hasta checkOut
+	for current := checkInTime; !current.After(checkOutTime); current = current.AddDate(0, 0, 1) {
+		days = append(days, current.Format("2006-01-02"))
+	}
 
 	var maxreservations int = -1
 	for _, day := range days {
@@ -364,16 +363,49 @@ func (repository Mongo) IsHotelAvailable(ctx context.Context, hotelID, checkIn, 
 		pipeline := []bson.M{
 			{
 				"$match": bson.M{
-					"hotel_id": hotelID, // Asegúrate de que hotelID sea del tipo correcto (ObjectID)
-					"check_in": bson.M{"$lte": time},
+					"hotel_id":  hotelID,
+					"check_in":  bson.M{"$lte": time},
 					"check_out": bson.M{"$gt": time},
 				},
 			},
 			{
-				"$count": "reservas_activas",
+				"$group": bson.M{
+					"_id":              nil,
+					"reservas_activas": bson.M{"$sum": 1},
+				},
+			},
+			{
+				"$project": bson.M{
+					"_id":              0,
+					"reservas_activas": 1,
+				},
+			},
+			{
+				"$unionWith": bson.M{
+					"coll": nil, // Esto es necesario para indicar que estamos agregando un documento manual
+					"pipeline": []bson.M{
+						{
+							"$documents": []bson.M{
+								{"reservas_activas": 0},
+							},
+						},
+					},
+				},
+			},
+			{
+				"$group": bson.M{
+					"_id":              nil,
+					"reservas_activas": bson.M{"$max": "$reservas_activas"},
+				},
+			},
+			{
+				"$project": bson.M{
+					"_id":              0,
+					"reservas_activas": 1,
+				},
 			},
 		}
-		
+
 		// Ejecutar el pipeline
 		cursor, err := repository.client.Database(repository.database).
 			Collection(repository.collection_reservation).
@@ -382,7 +414,7 @@ func (repository Mongo) IsHotelAvailable(ctx context.Context, hotelID, checkIn, 
 			return false, fmt.Errorf("error aggregating reservations: %w", err)
 		}
 		defer cursor.Close(ctx)
-		
+
 		// Obtener el resultado
 		var result struct {
 			ReservasActivas int `bson:"reservas_activas"`
@@ -394,7 +426,7 @@ func (repository Mongo) IsHotelAvailable(ctx context.Context, hotelID, checkIn, 
 		} else {
 			return false, fmt.Errorf("no results found")
 		}
-		
+
 		if result.ReservasActivas > maxreservations {
 			maxreservations = result.ReservasActivas
 		}
