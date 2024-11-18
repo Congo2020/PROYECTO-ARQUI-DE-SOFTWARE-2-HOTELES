@@ -1,11 +1,20 @@
 package hotels
 
+import "time"
+
 type Hotel struct {
-	ID        string   `json:"id"`
-	Name      string   `json:"name"`
-	Address   string   `json:"address"`
-	City      string   `json:"city"`
-	State     string   `json:"state"`
-	Rating    float64  `json:"rating"`
-	Amenities []string `json:"amenities"`
+	ID        string   `bson:"_id,omitempty"`
+	Name      string   `bson:"name"`
+	Address   string   `bson:"address"`
+	City      string   `bson:"city"`
+	State     string   `bson:"state"`
+	Country   string   `bson:"country"`
+	Phone     string   `bson:"phone"`
+	Email     string   `bson:"email"`
+	PricePerNight float64 `bson:"price_per_night"`
+	Rating    float64  `bson:"rating"`
+	AvaiableRooms int `bson:"avaiable_rooms"`
+	CheckInTime time.Time `bson:"check_in_time"`
+	CheckOutTime time.Time `bson:"check_out_time"`
+	Amenities []string `bson:"amenities"`
 }

@@ -186,3 +186,152 @@ func (service Service) Delete(ctx context.Context, id string) error {
 
 	return nil
 }
+
+func (service Service) CreateReservation(ctx context.Context, reservation hotelsDomain.Reservation) (string, error) {
+	record := hotelsDAO.Reservation{
+		HotelID: reservation.HotelID,
+		UserID:  reservation.UserID,
+		CheckIn: reservation.CheckIn,
+		CheckOut: reservation.CheckOut,
+	}
+	// Crea la reserva en el repositorio principal (base de datos -> MongoDB)
+	id, err := service.mainRepository.CreateReservation(ctx, record)
+	if err != nil {
+		return "", fmt.Errorf("error creating reservation in main repository: %w", err)
+	}
+	// Crea la reserva en el repositorio de cache
+	record.ID = id
+	if _, err := service.cacheRepository.CreateReservation(ctx, record); err != nil {
+		return "", fmt.Errorf("error creating reservation in cache: %w", err)
+	}
+
+	return id, nil
+}
+
+
+func (service Service) CancelReservation(ctx context.Context, id string) error {
+	// Intenta eliminar la reserva del repositorio principal (MongoDB)
+	err := service.mainRepository.CancelReservation(ctx, id)
+	if err != nil {
+		return fmt.Errorf("error canceling reservation from main repository: %w", err)
+	}
+
+	// Intenta eliminar la reserva del repositorio de cache
+	if err := service.cacheRepository.CancelReservation(ctx, id); err != nil {
+		return fmt.Errorf("error canceling reservation from cache: %w", err)
+	}
+
+	return nil
+}
+
+func (service Service) GetReservationsByHotelID(ctx context.Context, hotelID string) ([]hotelsDomain.Reservation, error) {
+	// Se intenta obtener las reservas del repositorio de cache
+	reservationsDAO, err := service.cacheRepository.GetReservationsByHotelID(ctx, hotelID)
+	if err != nil {
+		// Si no se encuentran en la cache, se obtienen del repositorio principal
+		reservationsDAO, err = service.mainRepository.GetReservationsByHotelID(ctx, hotelID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting reservations from repository: %v", err)
+		}
+		// Se guardan las reservas en la cache
+		for _, reservationDAO := range reservationsDAO {
+			if _, err := service.cacheRepository.CreateReservation(ctx, reservationDAO); err != nil {
+				return nil, fmt.Errorf("error creating reservation in cache: %w", err)
+			}
+		}
+	}
+
+	// Se convierten las reservas de formato de base de datos a formato de dominio
+	reservations := make([]hotelsDomain.Reservation, 0)
+	for _, reservationDAO := range reservationsDAO {
+		reservations = append(reservations, hotelsDomain.Reservation{
+			ID:       reservationDAO.ID,
+			HotelID:  reservationDAO.HotelID,
+			UserID:   reservationDAO.UserID,
+			CheckIn:  reservationDAO.CheckIn,
+			CheckOut: reservationDAO.CheckOut,
+		})
+	}
+
+	return reservations, nil
+}
+
+func (service Service) GetReservationsByUserAndHotelID(ctx context.Context, hotelID string, userID string) ([]hotelsDomain.Reservation, error) {
+	// Se intenta obtener las reservas del repositorio de cache
+	reservationsDAO, err := service.cacheRepository.GetReservationsByUserAndHotelID(ctx, hotelID, userID)
+	if err != nil {
+		// Si no se encuentran en la cache, se obtienen del repositorio principal
+		reservationsDAO, err = service.mainRepository.GetReservationsByUserAndHotelID(ctx, hotelID, userID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting reservations from repository: %v", err)
+		}
+		// Se guardan las reservas en la cache
+		for _, reservationDAO := range reservationsDAO {
+			if _, err := service.cacheRepository.CreateReservation(ctx, reservationDAO); err != nil {
+				return nil, fmt.Errorf("error creating reservation in cache: %w", err)
+			}
+		}
+	}
+
+	// Se convierten las reservas de formato de base de datos a formato de dominio
+	reservations := make([]hotelsDomain.Reservation, 0)
+	for _, reservationDAO := range reservationsDAO {
+		reservations = append(reservations, hotelsDomain.Reservation{
+			ID:       reservationDAO.ID,
+			HotelID:  reservationDAO.HotelID,
+			UserID:   reservationDAO.UserID,
+			CheckIn:  reservationDAO.CheckIn,
+			CheckOut: reservationDAO.CheckOut,
+		})
+	}
+
+	return reservations, nil
+}
+
+func (service Service) GetReservationsByUserID(ctx context.Context, userID string) ([]hotelsDomain.Reservation, error) {
+	// Se intenta obtener las reservas del repositorio de cache
+	reservationsDAO, err := service.cacheRepository.GetReservationsByUserID(ctx, userID)
+	if err != nil {
+		// Si no se encuentran en la cache, se obtienen del repositorio principal
+		reservationsDAO, err = service.mainRepository.GetReservationsByUserID(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting reservations from repository: %v", err)
+		}
+		// Se guardan las reservas en la cache
+		for _, reservationDAO := range reservationsDAO {
+			if _, err := service.cacheRepository.CreateReservation(ctx, reservationDAO); err != nil {
+				return nil, fmt.Errorf("error creating reservation in cache: %w", err)
+			}
+		}
+	}
+
+	// Se convierten las reservas de formato de base de datos a formato de dominio
+	reservations := make([]hotelsDomain.Reservation, 0)
+	for _, reservationDAO := range reservationsDAO {
+		reservations = append(reservations, hotelsDomain.Reservation{
+			ID:       reservationDAO.ID,
+			HotelID:  reservationDAO.HotelID,
+			UserID:   reservationDAO.UserID,
+			CheckIn:  reservationDAO.CheckIn,
+			CheckOut: reservationDAO.CheckOut,
+		})
+	}
+
+	return reservations, nil
+}
+
+
+//Hay que ver lo de hacerlo desde la cache
+func (service Service) GetAvailability(ctx context.Context, hotelIDs []string, checkIn, checkOut string) (map[string]bool, error) {
+	// Se intenta obtener la disponibilidad de los hoteles del repositorio de cache
+	availability, err := service.cacheRepository.GetAvailability(ctx, hotelIDs, checkIn, checkOut)
+	if err != nil {
+		// Si no se encuentran en la cache, se obtienen del repositorio principal
+		availability, err = service.mainRepository.GetAvailability(ctx, hotelIDs, checkIn, checkOut)
+		if err != nil {
+			return nil, fmt.Errorf("error getting availability from repository: %v", err)
+		}
+	}
+
+	return availability, nil
+}

@@ -42,7 +42,7 @@ func (service Service) Search(ctx context.Context, query string, offset int, lim
 		return nil, fmt.Errorf("error searching hotels: %w", err)
 	}
 
-	// Hace un mapeo de los hoteles de la lista de hoteles de la base de datos a la lista de hoteles del dominio
+	// Hace un mapeo de los hoteles de la lista de hoteles de Solr a la lista de hoteles de dominio
 	hotelsDomainList := make([]hotelsDomain.Hotel, 0)
 	for _, hotel := range hotelsDAOList {
 		hotelsDomainList = append(hotelsDomainList, hotelsDomain.Hotel{
@@ -51,7 +51,14 @@ func (service Service) Search(ctx context.Context, query string, offset int, lim
 			Address:   hotel.Address,
 			City:      hotel.City,
 			State:     hotel.State,
-			Rating:    hotel.Rating,
+			Country:  hotel.Country,
+			Phone:     hotel.Phone,
+			Email:    hotel.Email,
+			Rating:   hotel.Rating,
+			PricePerNight: hotel.PricePerNight,
+			AvaiableRooms: hotel.AvaiableRooms,
+			CheckInTime: hotel.CheckInTime,
+			CheckOutTime: hotel.CheckOutTime,
 			Amenities: hotel.Amenities,
 		})
 	}
@@ -80,7 +87,14 @@ func (service Service) HandleHotelNew(hotelNew hotelsDomain.HotelNew) {
 			Address:   hotel.Address,
 			City:      hotel.City,
 			State:     hotel.State,
-			Rating:    hotel.Rating,
+			Country:  hotel.Country,
+			Phone:     hotel.Phone,
+			Email:    hotel.Email,
+			Rating:   hotel.Rating,
+			PricePerNight: hotel.PricePerNight,
+			AvaiableRooms: hotel.AvaiableRooms,
+			CheckInTime: hotel.CheckInTime,
+			CheckOutTime: hotel.CheckOutTime,
 			Amenities: hotel.Amenities,
 		}
 

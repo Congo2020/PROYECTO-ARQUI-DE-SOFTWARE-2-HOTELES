@@ -210,7 +210,15 @@ func (repository Cache) GetReservationsByUserID(ctx context.Context, userID stri
 
 // GetAvailability verifica la disponibilidad de múltiples hoteles en caché
 func (repository Cache) GetAvailability(ctx context.Context, hotelIDs []string, checkIn, checkOut string) (map[string]bool, error) {
-    type result struct {
+    // Verificar si todos los hoteles están en la caché
+    for _, id := range hotelIDs {
+        key := fmt.Sprintf(keyFormat, id)
+        item := repository.client.Get(key)
+        if item == nil || item.Expired() {
+            return nil, fmt.Errorf("hotel with ID %s not found or expired in cache", id)
+        }
+    }
+	type result struct {
         hotelID   string
         available bool
         err       error

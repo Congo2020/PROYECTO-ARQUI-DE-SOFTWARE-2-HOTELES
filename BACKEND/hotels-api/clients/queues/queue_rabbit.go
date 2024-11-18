@@ -43,7 +43,7 @@ func NewRabbit(config RabbitConfig) Rabbit {
 	}
 }
 
-// Funcion que publica un mensaje en RabbitMQ
+// Funcion que publica un mensaje de hotel en RabbitMQ
 func (queue Rabbit) Publish(hotelNew hotels.HotelNew) error {
 	//Codifica el mensaje a JSON
 	bytes, err := json.Marshal(hotelNew)

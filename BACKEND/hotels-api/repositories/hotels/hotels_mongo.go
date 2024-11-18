@@ -340,19 +340,19 @@ func (repository Mongo) IsHotelAvailable(ctx context.Context, hotelID, checkIn, 
     }
 
     // Primero obtener el hotel y su capacidad en una sola consulta
-    var hotel hotelsDAO.Hotel
-    err = repository.client.Database(repository.database).Collection(repository.collection_hotel).
-        FindOne(ctx, bson.M{"_id": objectID}).
-        Decode(&hotel)
-    if err != nil {
-        return false, fmt.Errorf("error finding hotel: %w", err)
-    }
+	var availableRooms int
+	err = repository.client.Database(repository.database).Collection(repository.collection_hotel).
+		FindOne(ctx, bson.M{"_id": objectID}, options.FindOne().SetProjection(bson.M{"AvailableRooms": 1, "_id": 0})).
+		Decode(&availableRooms)
+	if err != nil {
+		return false, fmt.Errorf("error finding hotel: %w", err)
+	}
 
     // Agregar pipeline para contar reservas por día
     pipeline := []bson.M{
         {
             "$match": bson.M{
-                "hotel_id": hotelID,
+                "hotel_id": objectID,
                 "$or": []bson.M{
                     {"check_in": bson.M{"$lt": checkOutTime, "$gte": checkInTime}},
                     {"check_out": bson.M{"$gt": checkInTime, "$lte": checkOutTime}},
@@ -393,5 +393,5 @@ func (repository Mongo) IsHotelAvailable(ctx context.Context, hotelID, checkIn, 
     }
 
     // Verificar disponibilidad
-    return result.Count < hotel.AvaiableRooms, nil
+    return result.Count < availableRooms, nil
 }
