@@ -346,50 +346,59 @@ func (repository Mongo) IsHotelAvailable(ctx context.Context, hotelID, checkIn, 
 		return false, fmt.Errorf("error finding hotel: %w", err)
 	}
 
-	// Agregar pipeline para contar reservas por día
-	pipeline := []bson.M{
-		{
-			"$match": bson.M{
-				"hotel_id": objectID,
-				"$or": []bson.M{
-					{"check_in": bson.M{"$lt": checkOutTime, "$gte": checkInTime}},
-					{"check_out": bson.M{"$gt": checkInTime, "$lte": checkOutTime}},
-					{
-						"$and": []bson.M{
-							{"check_in": bson.M{"$lte": checkInTime}},
-							{"check_out": bson.M{"$gte": checkOutTime}},
-						},
-					},
+    // Lista para almacenar los días
+    var days []string
+
+    // Iterar desde checkIn hasta checkOut
+    for current := checkInTime; !current.After(checkOutTime); current = current.AddDate(0, 0, 1) {
+        days = append(days, current.Format("2006-01-02"))
+    }
+
+
+	var maxreservations int = -1
+	for _, day := range days {
+		time, err := time.Parse("2006-01-02", day)
+		if err != nil {
+			return false, fmt.Errorf("error parsing date: %w", err)
+		}
+		pipeline := []bson.M{
+			{
+				"$match": bson.M{
+					"hotel_id": hotelID, // Asegúrate de que hotelID sea del tipo correcto (ObjectID)
+					"check_in": bson.M{"$lte": time},
+					"check_out": bson.M{"$gt": time},
 				},
 			},
-		},
-		{
-			"$group": bson.M{
-				"_id":   nil,
-				"count": bson.M{"$sum": 1},
+			{
+				"$count": "reservas_activas",
 			},
-		},
-	}
-
-	// Ejecutar el pipeline
-	cursor, err := repository.client.Database(repository.database).
-		Collection(repository.collection_reservation).
-		Aggregate(ctx, pipeline)
-	if err != nil {
-		return false, fmt.Errorf("error aggregating reservations: %w", err)
-	}
-	defer cursor.Close(ctx)
-
-	// Obtener el resultado
-	var result struct {
-		Count int `bson:"count"`
-	}
-	if cursor.Next(ctx) {
-		if err := cursor.Decode(&result); err != nil {
-			return false, fmt.Errorf("error decoding result: %w", err)
+		}
+		
+		// Ejecutar el pipeline
+		cursor, err := repository.client.Database(repository.database).
+			Collection(repository.collection_reservation).
+			Aggregate(ctx, pipeline)
+		if err != nil {
+			return false, fmt.Errorf("error aggregating reservations: %w", err)
+		}
+		defer cursor.Close(ctx)
+		
+		// Obtener el resultado
+		var result struct {
+			ReservasActivas int `bson:"reservas_activas"`
+		}
+		if cursor.Next(ctx) {
+			if err := cursor.Decode(&result); err != nil {
+				return false, fmt.Errorf("error decoding result: %w", err)
+			}
+		} else {
+			return false, fmt.Errorf("no results found")
+		}
+		
+		if result.ReservasActivas > maxreservations {
+			maxreservations = result.ReservasActivas
 		}
 	}
-
 	// Verificar disponibilidad
-	return result.Count < int(av.AvailableRooms), nil
+	return maxreservations < int(av.AvailableRooms), nil
 }
