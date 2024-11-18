@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//Estas son las funciones que se encargan de interactuar con el servicio, se encargan de recibir las peticiones y enviar las respuestas (Vienen del service)
+// Estas son las funciones que se encargan de interactuar con el servicio, se encargan de recibir las peticiones y enviar las respuestas (Vienen del service)
 type Service interface {
 	GetHotelByID(ctx context.Context, id string) (hotelsDomain.Hotel, error)
 	Create(ctx context.Context, hotel hotelsDomain.Hotel) (string, error)
@@ -34,7 +34,7 @@ func NewController(service Service) Controller {
 	}
 }
 
-//Funcion para obtener un hotel por ID (GET)
+// Funcion para obtener un hotel por ID (GET)
 func (controller Controller) GetHotelByID(ctx *gin.Context) {
 	// Valida el ID del hotel que viene en la URL
 	hotelID := strings.TrimSpace(ctx.Param("hotel_id"))
@@ -52,8 +52,7 @@ func (controller Controller) GetHotelByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, hotel)
 }
 
-
-//Funcion para crear un hotel (POST)
+// Funcion para crear un hotel (POST)
 func (controller Controller) Create(ctx *gin.Context) {
 	// Le da formato al hotel que viene en el body de la peticiona un DAO
 	var hotel hotelsDomain.Hotel
@@ -79,8 +78,7 @@ func (controller Controller) Create(ctx *gin.Context) {
 	})
 }
 
-
-//Funcion para actualizar un hotel (PUT)
+// Funcion para actualizar un hotel (PUT)
 func (controller Controller) Update(ctx *gin.Context) {
 	// Valida el ID del hotel que viene en la URL
 	id := strings.TrimSpace(ctx.Param("hotel_id"))
@@ -111,8 +109,7 @@ func (controller Controller) Update(ctx *gin.Context) {
 	})
 }
 
-
-//Funcion para eliminar un hotel (DELETE)
+// Funcion para eliminar un hotel (DELETE)
 func (controller Controller) Delete(ctx *gin.Context) {
 	// Valida el ID del hotel que viene en la URL
 	id := strings.TrimSpace(ctx.Param("hotel_id"))
@@ -131,10 +128,9 @@ func (controller Controller) Delete(ctx *gin.Context) {
 	})
 }
 
-
-//Funcion para crear una reserva (POST)
+// Funcion para crear una reserva (POST)
 func (controller Controller) CreateReservation(ctx *gin.Context) {
-	// Le da formato a la reserva que viene en el body de la peticiona 
+	// Le da formato a la reserva que viene en el body de la peticiona
 	var reservation hotelsDomain.Reservation
 	if err := ctx.ShouldBindJSON(&reservation); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -216,7 +212,7 @@ func (controller Controller) GetReservationsByUserAndHotelID(ctx *gin.Context) {
 	hotelID := strings.TrimSpace(ctx.Param("hotel_id"))
 
 	// Obtiene las reservas por ID de usuario y hotel
-	reservations, err := controller.service.GetReservationsByUserAndHotelID(ctx.Request.Context(), userID, hotelID)
+	reservations, err := controller.service.GetReservationsByUserAndHotelID(ctx.Request.Context(), hotelID, userID)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{
 			"error": fmt.Sprintf("error getting reservations: %s", err.Error()),
@@ -231,9 +227,9 @@ func (controller Controller) GetReservationsByUserAndHotelID(ctx *gin.Context) {
 func (controller Controller) GetAvailability(ctx *gin.Context) {
 	// Valida los IDs de los hoteles que vienen en el body de la peticion
 	var req struct {
-		HotelIDs  []string `json:"hotel_ids"`
-		CheckIn   string   `json:"check_in"`
-		CheckOut  string   `json:"check_out"`
+		HotelIDs []string `json:"hotel_ids"`
+		CheckIn  string   `json:"check_in"`
+		CheckOut string   `json:"check_out"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{

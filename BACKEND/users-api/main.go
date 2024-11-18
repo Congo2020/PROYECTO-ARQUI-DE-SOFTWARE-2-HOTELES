@@ -1,13 +1,15 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
 	"time"
 	controllers "users-api/controllers/users"
 	"users-api/internal/tokenizers"
 	repositories "users-api/repositories/users"
 	services "users-api/services/users"
+	"users-api/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -49,6 +51,9 @@ func main() {
 
 	// Create router
 	router := gin.Default()
+
+	// Use CORS middleware
+	router.Use(utils.CorsMiddleware())
 
 	// URL mappings
 	router.GET("/users", controller.GetAll)

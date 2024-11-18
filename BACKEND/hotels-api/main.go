@@ -8,6 +8,8 @@ import (
 	"log"
 	"time"
 
+	"hotels-api/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,12 +23,12 @@ func main() {
 
 	// Mongo
 	mainRepository := repositories.NewMongo(repositories.MongoConfig{
-		Host:       "mongo",
-		Port:       "27017",
-		Username:   "root",
-		Password:   "root",
-		Database:   "hotels-api",
-		Collection_hotels: "hotels",
+		Host:                    "mongo",
+		Port:                    "27017",
+		Username:                "root",
+		Password:                "root",
+		Database:                "hotels-api",
+		Collection_hotels:       "hotels",
 		Collection_reservations: "reservations",
 	})
 
@@ -48,18 +50,22 @@ func main() {
 
 	// Router
 	// Rutea las peticiones a los controladores
-    router := gin.Default()
-    router.GET("/hotels/:hotel_id", controller.GetHotelByID)
-    router.POST("/hotels", controller.Create)
-    router.PUT("/hotels/:hotel_id", controller.Update)
-    router.DELETE("/hotels/:hotel_id", controller.Delete)
-    router.POST("/hotels/reservations", controller.CreateReservation)
-    router.DELETE("/hotels/reservations/:id", controller.CancelReservation)
-    router.GET("/hotels/:hotel_id/reservations", controller.GetReservationsByHotelID)
-    router.GET("/users/:user_id/reservations", controller.GetReservationsByUserID)
-    router.GET("/users/:user_id/hotels/:hotel_id/reservations", controller.GetReservationsByUserAndHotelID)
-    router.GET("/hotels/availability", controller.GetAvailability)
-    if err := router.Run(":8081"); err != nil {
-        log.Fatalf("error running application: %w", err)
-    }
+	router := gin.Default()
+
+	// Use CORS middleware
+	router.Use(utils.CorsMiddleware())
+
+	router.GET("/hotels/:hotel_id", controller.GetHotelByID)
+	router.POST("/hotels", controller.Create)
+	router.PUT("/hotels/:hotel_id", controller.Update)
+	router.DELETE("/hotels/:hotel_id", controller.Delete)
+	router.POST("/hotels/reservations", controller.CreateReservation)
+	router.DELETE("/hotels/reservations/:id", controller.CancelReservation)
+	router.GET("/hotels/:hotel_id/reservations", controller.GetReservationsByHotelID)
+	router.GET("/users/:user_id/reservations", controller.GetReservationsByUserID)
+	router.GET("/users/:user_id/hotels/:hotel_id/reservations", controller.GetReservationsByUserAndHotelID)
+	router.GET("/hotels/availability", controller.GetAvailability)
+	if err := router.Run(":8081"); err != nil {
+		log.Fatalf("error running application: %w", err)
+	}
 }

@@ -7,6 +7,8 @@ import (
 	repositories "search-api/repositories/hotels"
 	services "search-api/services/search"
 
+	"search-api/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,6 +49,10 @@ func main() {
 
 	// Create router
 	router := gin.Default()
+
+	// Use CORS middleware
+	router.Use(utils.CorsMiddleware())
+
 	router.GET("/search", controller.Search)
 	if err := router.Run(":8082"); err != nil {
 		log.Fatalf("Error running application: %v", err)
