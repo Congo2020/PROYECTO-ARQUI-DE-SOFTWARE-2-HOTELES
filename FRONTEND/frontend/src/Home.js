@@ -6,7 +6,7 @@ const Home = ({ token, setToken }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    setToken(null);
+    setToken(null); // Esto llamará a handleSetToken que limpiará tanto localStorage como cookies
     navigate('/login');
   };
 

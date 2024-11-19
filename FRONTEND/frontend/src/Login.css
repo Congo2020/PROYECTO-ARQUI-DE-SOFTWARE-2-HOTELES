@@ -4,7 +4,7 @@ body {
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    background-image: url('C:\Users\GoodGame\OneDrive\Escritorio\PROYECTO PARA PRESENTAR\PROYECTO-ARQUI-DE-SOFTWARE-2-HOTELES\FRONTEND\frontend\Imagenes\Fondo2.png'); 
+    background-image: url('../Imagenes/Fondo2.png');
     background-size: cover; 
     background-position: center;
     background-repeat: no-repeat; 

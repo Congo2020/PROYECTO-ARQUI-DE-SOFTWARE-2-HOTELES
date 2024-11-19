@@ -21,6 +21,8 @@ const Hotels = ({ token }) => {
   const decodedToken = jwtDecode(token1);
   const userID = decodedToken.user_id;
 
+  // Obtener la fecha actual en formato adecuado (YYYY-MM-DD)
+  const today = new Date().toISOString().split("T")[0];
 
   // Buscar hoteles
   const fetchHotels = async () => {
@@ -129,12 +131,14 @@ const Hotels = ({ token }) => {
           value={checkInDate}
           onChange={(e) => setCheckInDate(e.target.value)}
           placeholder="Fecha de Check-in"
+          min={today} // Establecer la fecha mínima como hoy
         />
         <input
           type="date"
           value={checkOutDate}
           onChange={(e) => setCheckOutDate(e.target.value)}
           placeholder="Fecha de Check-out"
+          min={checkInDate || today} // Establecer la fecha mínima como la fecha de check-in o hoy
         />
         <button onClick={checkAvailability}>Verificar Disponibilidad</button>
       </div>

@@ -83,10 +83,8 @@ const Login = ({ token, setToken }) => {
             });
     
             if (response.data.token) {
-                // Add console.log to debug
-                console.log('Login successful, token:', response.data.token);
-                setToken(response.data.token);
-                cookies.set("token", response.data.token, { path: "/" });
+                console.log('Login successful');
+                setToken(response.data.token); // handleSetToken manejará localStorage y cookies
                 navigate('/');
             }
         } catch (error) {
