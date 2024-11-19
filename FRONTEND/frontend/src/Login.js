@@ -99,7 +99,6 @@ const Login = ({ token, setToken }) => {
     
     const FormField = ({ type, name, label, value, onChange, disabled }) => (
         <div className="form-group">
-            <label htmlFor={name}>{label}</label>
             <input
                 type={type}
                 id={name}
@@ -112,9 +111,11 @@ const Login = ({ token, setToken }) => {
                 spellCheck="false"
                 autoCapitalize="off"
                 className="form-input"
+                placeholder={label}
             />
         </div>
     );
+
 
     const LoginForm = () => (
         <div className="login-container">

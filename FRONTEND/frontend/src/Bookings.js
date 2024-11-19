@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom"; // Importar useNavigate
 import { jwtDecode } from "jwt-decode"; // Asegúrate de importar jwt-decode
 import Cookies from "universal-cookie";
+import "./Bookings.css";
+
 
 const Bookings = ({ token }) => {
   const [reservations, setReservations] = useState([]); // Lista de reservas

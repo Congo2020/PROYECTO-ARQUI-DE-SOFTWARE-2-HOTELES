@@ -6,21 +6,21 @@ import { jwtDecode } from "jwt-decode";
 import Cookies from "universal-cookie";
 
 const Hotels = ({ token }) => {
-  const [hotels, setHotels] = useState([]); // Lista de hoteles
-  const [searchQuery, setSearchQuery] = useState(""); // Consulta de búsqueda
-  const [reservationStatus, setReservationStatus] = useState(""); // Estado de la reserva
-  const [checkInDate, setCheckInDate] = useState(""); // Fecha de check-in
-  const [checkOutDate, setCheckOutDate] = useState(""); // Fecha de check-out
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // Para mostrar el modal de confirmación
-  const [hotelToReserve, setHotelToReserve] = useState(null); // Guardamos el hotel seleccionado
-  const navigate = useNavigate(); // Usar el hook useNavigate
+  const [hotels, setHotels] = useState([]);
+  const [availability, setAvailability] = useState({}); // Estado para la disponibilidad
+  const [searchQuery, setSearchQuery] = useState("");
+  const [reservationStatus, setReservationStatus] = useState("");
+  const [checkInDate, setCheckInDate] = useState("");
+  const [checkOutDate, setCheckOutDate] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [hotelToReserve, setHotelToReserve] = useState(null);
+  const navigate = useNavigate();
 
   const cookies = new Cookies();
   const token1 = cookies.get("token");
   const decodedToken = jwtDecode(token1);
   const userID = decodedToken.user_id;
 
-  console.log("User ID desde el token:", userID);
 
   // Buscar hoteles
   const fetchHotels = async () => {
@@ -29,14 +29,40 @@ const Hotels = ({ token }) => {
         params: { q: searchQuery, offset: 0, limit: 10 },
         headers: { Authorization: `Bearer ${token}` },
       });
-      setHotels(response.data); // Guardamos los hoteles encontrados
-      setReservationStatus(""); // Limpia mensajes anteriores
+      setHotels(response.data);
+      setReservationStatus("");
     } catch (err) {
       console.error("Error fetching hotels:", err);
       setReservationStatus("No se pudieron obtener los hoteles. Intente nuevamente.");
     }
   };
 
+  const checkAvailability = async () => {
+    if (!checkInDate || !checkOutDate) {
+      setReservationStatus("Por favor, selecciona las fechas de Check-in y Check-out.");
+      return;
+    }
+  
+    const hotelIDs = hotels.map((hotel) => hotel.id); // Obtener IDs de los hoteles
+    try {
+      const response = await axios.post(
+        "http://localhost:8081/hotels/availability",
+        {
+          hotel_ids: hotelIDs,
+          check_in: checkInDate,
+          check_out: checkOutDate,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      const availabilityMap = response.data; // Usar el objeto directamente
+      setAvailability(availabilityMap); // Guardar disponibilidad
+    } catch (err) {
+      console.error("Error checking availability:", err);
+      setReservationStatus("Error al verificar la disponibilidad.");
+    }
+  };
+  
   // Confirmar la reserva
   const handleConfirmReserve = async () => {
     if (!checkInDate || !checkOutDate) {
@@ -44,23 +70,15 @@ const Hotels = ({ token }) => {
       return;
     }
 
-    const checkIn = new Date(checkInDate);
-    const checkOut = new Date(checkOutDate);
-
-    if (checkIn >= checkOut) {
-      setReservationStatus("La fecha de Check-out debe ser posterior a la de Check-in.");
-      return;
-    }
-
-    // Encontrar el nombre del hotel usando el hotelToReserve
     const selectedHotel = hotels.find((hotel) => hotel.id === hotelToReserve);
-
     if (!selectedHotel) {
       setReservationStatus("No se encontró el hotel seleccionado.");
       return;
     }
 
     try {
+      const checkIn = new Date(checkInDate);
+      const checkOut = new Date(checkOutDate);
       await axios.post(
         "http://localhost:8081/hotels/reservations",
         {
@@ -87,19 +105,8 @@ const Hotels = ({ token }) => {
     setShowConfirmModal(true);
   };
 
-  // Cerrar el modal
   const closeModal = () => {
     setShowConfirmModal(false);
-  };
-
-  // Navegar hacia atrás
-  const handleGoBack = () => {
-    navigate(-1);
-  };
-
-  // Función para redirigir a la página de detalles del hotel
-  const handleViewDetails = (hotelId) => {
-    navigate(`/hotels/${hotelId}`);
   };
 
   return (
@@ -129,6 +136,7 @@ const Hotels = ({ token }) => {
           onChange={(e) => setCheckOutDate(e.target.value)}
           placeholder="Fecha de Check-out"
         />
+        <button onClick={checkAvailability}>Verificar Disponibilidad</button>
       </div>
 
       {reservationStatus && <p style={{ color: reservationStatus.includes("Error") ? "red" : "green" }}>{reservationStatus}</p>}
@@ -141,9 +149,8 @@ const Hotels = ({ token }) => {
             <li key={hotel.id}>
               <h3>{hotel.name}</h3>
               <p>{hotel.address}, {hotel.city}</p>
-              <p>Precio: ${hotel.price}</p>
+          
 
-              {/* Mostrar imágenes del hotel */}
               <div className="hotel-images">
                 {hotel.images?.map((image, index) => (
                   <img
@@ -155,14 +162,22 @@ const Hotels = ({ token }) => {
                 ))}
               </div>
 
-              <button onClick={() => handleReserve(hotel.id)}>Reservar</button>
-              <button onClick={() => handleViewDetails(hotel.id)}>Ver más</button>
+              <button
+                onClick={() => handleReserve(hotel.id)}
+                style={{
+                  backgroundColor: availability[hotel.id] ? "green" : "grey",
+                  cursor: availability[hotel.id] ? "pointer" : "not-allowed",
+                }}
+                disabled={!availability[hotel.id]}
+              >
+                Reservar
+              </button>
+              <button onClick={() => navigate(`/hotels/${hotel.id}`)}>Ver más</button>
             </li>
           ))
         )}
       </ul>
 
-      {/* Modal de confirmación */}
       {showConfirmModal && (
         <div className="modal">
           <div className="modal-content">
@@ -172,9 +187,6 @@ const Hotels = ({ token }) => {
           </div>
         </div>
       )}
-
-      {/* Botón para volver */}
-      <button onClick={handleGoBack}>Volver</button>
     </div>
   );
 };

@@ -7,7 +7,7 @@ import (
 	hotelsDomain "hotels-api/domain/hotels"
 )
 
-//Estas funciones salen de los repositorios, se encargan de interactuar tanto de la base de datos como de la cache, ambas tienen las mismas funciones pero con diferentes implementaciones para cada cosa
+// Estas funciones salen de los repositorios, se encargan de interactuar tanto de la base de datos como de la cache, ambas tienen las mismas funciones pero con diferentes implementaciones para cada cosa
 type Repository interface {
 	GetHotelByID(ctx context.Context, id string) (hotelsDAO.Hotel, error)
 	Create(ctx context.Context, hotel hotelsDAO.Hotel) (string, error)
@@ -19,9 +19,7 @@ type Repository interface {
 	GetReservationsByUserAndHotelID(ctx context.Context, hotelID string, userID string) ([]hotelsDAO.Reservation, error)
 	GetReservationsByUserID(ctx context.Context, userID string) ([]hotelsDAO.Reservation, error)
 	GetAvailability(ctx context.Context, hotelIDs []string, checkIn, checkOut string) (map[string]bool, error)
-
 }
-
 
 type Queue interface {
 	Publish(hotelNew hotelsDomain.HotelNew) error
@@ -33,7 +31,7 @@ type Service struct {
 	eventsQueue     Queue
 }
 
-//Funcion que se encarga de crear un nuevo servicio con los repositorios y la cola de eventos
+// Funcion que se encarga de crear un nuevo servicio con los repositorios y la cola de eventos
 func NewService(mainRepository Repository, cacheRepository Repository, eventsQueue Queue) Service {
 	return Service{
 		mainRepository:  mainRepository,
@@ -42,7 +40,7 @@ func NewService(mainRepository Repository, cacheRepository Repository, eventsQue
 	}
 }
 
-//Funcion que se encarga de obtener un hotel por su ID, primero se intenta obtener de la cache, si no se encuentra se obtiene de la base de datos principal y se guarda en la cache
+// Funcion que se encarga de obtener un hotel por su ID, primero se intenta obtener de la cache, si no se encuentra se obtiene de la base de datos principal y se guarda en la cache
 func (service Service) GetHotelByID(ctx context.Context, id string) (hotelsDomain.Hotel, error) {
 	// Se intenta obtener el hotel de la cache
 	hotelDAO, err := service.cacheRepository.GetHotelByID(ctx, id)
@@ -61,46 +59,45 @@ func (service Service) GetHotelByID(ctx context.Context, id string) (hotelsDomai
 	// Lo pasa de formato de base de datos a formato de dominio para las respuestas
 	//Lo devuelve en formato de dominio
 	return hotelsDomain.Hotel{
-		ID:        hotelDAO.ID,
-		Name:      hotelDAO.Name,
-		Description: hotelDAO.Description,
-		Address:   hotelDAO.Address,
-		City:      hotelDAO.City,
-		State:     hotelDAO.State,
-		Country:   hotelDAO.Country,
-		Phone:     hotelDAO.Phone,
-		Email:     hotelDAO.Email,
+		ID:            hotelDAO.ID,
+		Name:          hotelDAO.Name,
+		Description:   hotelDAO.Description,
+		Address:       hotelDAO.Address,
+		City:          hotelDAO.City,
+		State:         hotelDAO.State,
+		Country:       hotelDAO.Country,
+		Phone:         hotelDAO.Phone,
+		Email:         hotelDAO.Email,
 		PricePerNight: hotelDAO.PricePerNight,
-		Rating:    hotelDAO.Rating,
+		Rating:        hotelDAO.Rating,
 		AvaiableRooms: hotelDAO.AvaiableRooms,
-		CheckInTime: hotelDAO.CheckInTime,
-		CheckOutTime: hotelDAO.CheckOutTime,
-		Amenities: hotelDAO.Amenities,
-		Images:    hotelDAO.Images,
+		CheckInTime:   hotelDAO.CheckInTime,
+		CheckOutTime:  hotelDAO.CheckOutTime,
+		Amenities:     hotelDAO.Amenities,
+		Images:        hotelDAO.Images,
 	}, nil
 }
 
-
-//Funcion que se encarga de crear un nuevo hotel, primero se crea en la base de datos principal, luego en la cache y por ultimo se publica un evento para notificar que se creo un nuevo hotel
+// Funcion que se encarga de crear un nuevo hotel, primero se crea en la base de datos principal, luego en la cache y por ultimo se publica un evento para notificar que se creo un nuevo hotel
 func (service Service) Create(ctx context.Context, hotel hotelsDomain.Hotel) (string, error) {
 	// Convierte el modelo de dominio a modelo DAO
 	//Modelo de como viene -> modelo base de datos
 	record := hotelsDAO.Hotel{
-		Name:      hotel.Name,
-		Description: hotel.Description,
-		Address:   hotel.Address,
-		City:      hotel.City,
-		State:     hotel.State,
-		Country: hotel.Country,
-		Phone: hotel.Phone,
-		Email: hotel.Email,
+		Name:          hotel.Name,
+		Description:   hotel.Description,
+		Address:       hotel.Address,
+		City:          hotel.City,
+		State:         hotel.State,
+		Country:       hotel.Country,
+		Phone:         hotel.Phone,
+		Email:         hotel.Email,
 		PricePerNight: hotel.PricePerNight,
-		Rating:    hotel.Rating,
+		Rating:        hotel.Rating,
 		AvaiableRooms: hotel.AvaiableRooms,
-		CheckInTime: hotel.CheckInTime,
-		CheckOutTime: hotel.CheckOutTime,
-		Amenities: hotel.Amenities,
-		Images:    hotel.Images,
+		CheckInTime:   hotel.CheckInTime,
+		CheckOutTime:  hotel.CheckOutTime,
+		Amenities:     hotel.Amenities,
+		Images:        hotel.Images,
 	}
 	// Crea el hotel en el repositorio principal (base de datos -> MongoDB)
 	id, err := service.mainRepository.Create(ctx, record)
@@ -124,26 +121,26 @@ func (service Service) Create(ctx context.Context, hotel hotelsDomain.Hotel) (st
 	return id, nil
 }
 
-//Funcion que se encarga de actualizar un hotel, primero se actualiza en la base de datos principal, luego en la cache y por ultimo se publica un evento para notificar que se actualizo un hotel
+// Funcion que se encarga de actualizar un hotel, primero se actualiza en la base de datos principal, luego en la cache y por ultimo se publica un evento para notificar que se actualizo un hotel
 func (service Service) Update(ctx context.Context, hotel hotelsDomain.Hotel) error {
-	// Convierte el modelo de dominio a modelo DAO 
+	// Convierte el modelo de dominio a modelo DAO
 	record := hotelsDAO.Hotel{
-		ID:        hotel.ID,
-		Name:      hotel.Name,
-		Description: hotel.Description,
-		Address:   hotel.Address,
-		City:      hotel.City,
-		State:     hotel.State,
-		Country: hotel.Country,
-		Phone: hotel.Phone,
-		Email: hotel.Email,
+		ID:            hotel.ID,
+		Name:          hotel.Name,
+		Description:   hotel.Description,
+		Address:       hotel.Address,
+		City:          hotel.City,
+		State:         hotel.State,
+		Country:       hotel.Country,
+		Phone:         hotel.Phone,
+		Email:         hotel.Email,
 		PricePerNight: hotel.PricePerNight,
-		Rating:    hotel.Rating,
+		Rating:        hotel.Rating,
 		AvaiableRooms: hotel.AvaiableRooms,
-		CheckInTime: hotel.CheckInTime,
-		CheckOutTime: hotel.CheckOutTime,
-		Amenities: hotel.Amenities,
-		Images:    hotel.Images,
+		CheckInTime:   hotel.CheckInTime,
+		CheckOutTime:  hotel.CheckOutTime,
+		Amenities:     hotel.Amenities,
+		Images:        hotel.Images,
 	}
 
 	// Actualiza el hotel en el repositorio principal (MongoDB)
@@ -168,8 +165,7 @@ func (service Service) Update(ctx context.Context, hotel hotelsDomain.Hotel) err
 	return nil
 }
 
-
-//Funcion que se encarga de eliminar un hotel, primero se elimina de la base de datos principal, luego de la cache y por ultimo se publica un evento para notificar que se elimino un hotel
+// Funcion que se encarga de eliminar un hotel, primero se elimina de la base de datos principal, luego de la cache y por ultimo se publica un evento para notificar que se elimino un hotel
 func (service Service) Delete(ctx context.Context, id string) error {
 	// Intenta eliminar el hotel del repositorio principal (MongoDB)
 	err := service.mainRepository.Delete(ctx, id)
@@ -196,10 +192,10 @@ func (service Service) Delete(ctx context.Context, id string) error {
 func (service Service) CreateReservation(ctx context.Context, reservation hotelsDomain.Reservation) (string, error) {
 	record := hotelsDAO.Reservation{
 		HotelName: reservation.HotelName,
-		HotelID: reservation.HotelID,
-		UserID:  reservation.UserID,
-		CheckIn: reservation.CheckIn,
-		CheckOut: reservation.CheckOut,
+		HotelID:   reservation.HotelID,
+		UserID:    reservation.UserID,
+		CheckIn:   reservation.CheckIn,
+		CheckOut:  reservation.CheckOut,
 	}
 	// Crea la reserva en el repositorio principal (base de datos -> MongoDB)
 	id, err := service.mainRepository.CreateReservation(ctx, record)
@@ -214,7 +210,6 @@ func (service Service) CreateReservation(ctx context.Context, reservation hotels
 
 	return id, nil
 }
-
 
 func (service Service) CancelReservation(ctx context.Context, id string) error {
 	// Intenta eliminar la reserva del repositorio principal (MongoDB)
@@ -252,12 +247,12 @@ func (service Service) GetReservationsByHotelID(ctx context.Context, hotelID str
 	reservations := make([]hotelsDomain.Reservation, 0)
 	for _, reservationDAO := range reservationsDAO {
 		reservations = append(reservations, hotelsDomain.Reservation{
-			ID:       reservationDAO.ID,
+			ID:        reservationDAO.ID,
 			HotelName: reservationDAO.HotelName,
-			HotelID:  reservationDAO.HotelID,
-			UserID:   reservationDAO.UserID,
-			CheckIn:  reservationDAO.CheckIn,
-			CheckOut: reservationDAO.CheckOut,
+			HotelID:   reservationDAO.HotelID,
+			UserID:    reservationDAO.UserID,
+			CheckIn:   reservationDAO.CheckIn,
+			CheckOut:  reservationDAO.CheckOut,
 		})
 	}
 
@@ -285,12 +280,12 @@ func (service Service) GetReservationsByUserAndHotelID(ctx context.Context, hote
 	reservations := make([]hotelsDomain.Reservation, 0)
 	for _, reservationDAO := range reservationsDAO {
 		reservations = append(reservations, hotelsDomain.Reservation{
-			ID:       reservationDAO.ID,
+			ID:        reservationDAO.ID,
 			HotelName: reservationDAO.HotelName,
-			HotelID:  reservationDAO.HotelID,
-			UserID:   reservationDAO.UserID,
-			CheckIn:  reservationDAO.CheckIn,
-			CheckOut: reservationDAO.CheckOut,
+			HotelID:   reservationDAO.HotelID,
+			UserID:    reservationDAO.UserID,
+			CheckIn:   reservationDAO.CheckIn,
+			CheckOut:  reservationDAO.CheckOut,
 		})
 	}
 
@@ -318,20 +313,19 @@ func (service Service) GetReservationsByUserID(ctx context.Context, userID strin
 	reservations := make([]hotelsDomain.Reservation, 0)
 	for _, reservationDAO := range reservationsDAO {
 		reservations = append(reservations, hotelsDomain.Reservation{
-			ID:       reservationDAO.ID,
+			ID:        reservationDAO.ID,
 			HotelName: reservationDAO.HotelName,
-			HotelID:  reservationDAO.HotelID,
-			UserID:   reservationDAO.UserID,
-			CheckIn:  reservationDAO.CheckIn,
-			CheckOut: reservationDAO.CheckOut,
+			HotelID:   reservationDAO.HotelID,
+			UserID:    reservationDAO.UserID,
+			CheckIn:   reservationDAO.CheckIn,
+			CheckOut:  reservationDAO.CheckOut,
 		})
 	}
 
 	return reservations, nil
 }
 
-
-//Hay que ver lo de hacerlo desde la cache
+// Hay que ver lo de hacerlo desde la cache
 func (service Service) GetAvailability(ctx context.Context, hotelIDs []string, checkIn, checkOut string) (map[string]bool, error) {
 	// Se intenta obtener la disponibilidad de los hoteles del repositorio de cache
 	availability, err := service.cacheRepository.GetAvailability(ctx, hotelIDs, checkIn, checkOut)

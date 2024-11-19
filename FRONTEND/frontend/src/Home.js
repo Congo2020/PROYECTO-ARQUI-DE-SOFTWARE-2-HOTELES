@@ -23,17 +23,9 @@ const Home = ({ token, setToken }) => {
         <div className="dashboard">
           <h2>Panel de Control</h2>
           <div className="dashboard-cards">
-            <div className="card" onClick={() => navigate('/rooms')}>
-              <h3>Gestión de Habitaciones</h3>
-              <p>Agregar, editar o eliminar habitaciones.</p>
-            </div>
             <div className="card" onClick={() => navigate('/bookings')}>
               <h3>Reservas</h3>
               <p>Ver y gestionar reservas de clientes.</p>
-            </div>
-            <div className="card" onClick={() => navigate('/customers')}>
-              <h3>Clientes</h3>
-              <p>Gestionar información de clientes y reseñas.</p>
             </div>
             <div className="card" onClick={() => navigate('/hotels')}>
               <h3>Hoteles</h3>

@@ -1,8 +1,10 @@
+import "./HotelsDetails.css";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import Cookies from "universal-cookie";
+
 
 const HotelDetails = ({ token }) => {
   const { id } = useParams();  // Extraer el hotelId de la URL
@@ -65,10 +67,6 @@ const HotelDetails = ({ token }) => {
         ))}
       </div>
 
-      <p>Disponible desde: {new Date(hotel.available_from).toLocaleDateString()}</p>
-      <p>Disponible hasta: {new Date(hotel.available_until).toLocaleDateString()}</p>
-
-      <button onClick={() => alert("¡Reserva tu estancia aquí!")}>Reservar este hotel</button>
     </div>
   );
 };
