@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"search-api/dao/hotels"
+	"time"
 
 	"github.com/stevenferrer/solr-go"
 )
@@ -41,11 +42,20 @@ func (searchEngine Solr) Index(ctx context.Context, hotel hotels.Hotel) (string,
 	doc := map[string]interface{}{
 		"id":        hotel.ID,
 		"name":      hotel.Name,
+		"description": hotel.Description,
 		"address":   hotel.Address,
 		"city":      hotel.City,
 		"state":     hotel.State,
+		"country":   hotel.Country,
+		"phone":     hotel.Phone,
+		"email":     hotel.Email,
+		"price_per_night": hotel.PricePerNight,
+		"avaiable_rooms": hotel.AvaiableRooms,
+		"check_in_time": hotel.CheckInTime,
+		"check_out_time": hotel.CheckOutTime,
 		"rating":    hotel.Rating,
 		"amenities": hotel.Amenities,
+		"images":    hotel.Images,
 	}
 
 	// Prepara el request de indexacion
@@ -83,11 +93,20 @@ func (searchEngine Solr) Update(ctx context.Context, hotel hotels.Hotel) error {
 	doc := map[string]interface{}{
 		"id":        hotel.ID,
 		"name":      hotel.Name,
+		"description": hotel.Description,
 		"address":   hotel.Address,
 		"city":      hotel.City,
 		"state":     hotel.State,
+		"country":   hotel.Country,
+		"phone":     hotel.Phone,
+		"email":     hotel.Email,
+		"price_per_night": hotel.PricePerNight,
 		"rating":    hotel.Rating,
+		"avaiable_rooms": hotel.AvaiableRooms,
+		"check_in_time": hotel.CheckInTime,
+		"check_out_time": hotel.CheckOutTime,
 		"amenities": hotel.Amenities,
+		"images":    hotel.Images,
 	}
 
 	// Prepara el request de actualizacion
@@ -170,6 +189,7 @@ func (searchEngine Solr) Search(ctx context.Context, query string, limit int, of
 	for _, doc := range resp.Response.Documents {
 		// Crea un slice de strings para los amenities
 		var amenities []string
+		var images []string
 
 		// Extrae los amenities del documento y los agrega al slice
 		if amenitiesData, ok := doc["amenities"].([]interface{}); ok {
@@ -179,16 +199,32 @@ func (searchEngine Solr) Search(ctx context.Context, query string, limit int, of
 				}
 			}
 		}
+		if imagesData, ok := doc["images"].([]interface{}); ok {
+			for _, image := range imagesData {
+				if imageStr, ok := image.(string); ok {
+					images = append(images, imageStr)
+				}
+			}
+		}
 
 		// Lo convierte en un objeto de tipo Hotel y lo agrega a la lista
 		hotel := hotels.Hotel{
 			ID:        getStringField(doc, "id"),
 			Name:      getStringField(doc, "name"),
+			Description: getStringField(doc, "description"),
 			Address:   getStringField(doc, "address"),
 			City:      getStringField(doc, "city"),
 			State:     getStringField(doc, "state"),
+			Country:   getStringField(doc, "country"),
+			Phone:     getStringField(doc, "phone"),
+			Email:     getStringField(doc, "email"),
+			PricePerNight: getFloatField(doc, "price_per_night"),
+			AvaiableRooms: int(getFloatField(doc, "avaiable_rooms")),
+			CheckInTime: getTimeField(doc, "check_in_time"),
+			CheckOutTime: getTimeField(doc, "check_out_time"),
 			Rating:    getFloatField(doc, "rating"),
 			Amenities: amenities,
+			Images: images,
 		}
 		// Agrega el hotel a la lista
 		hotelsList = append(hotelsList, hotel)
@@ -197,6 +233,16 @@ func (searchEngine Solr) Search(ctx context.Context, query string, limit int, of
 	// Devuelve la lista de hoteles
 	return hotelsList, nil
 }
+
+
+// Funcion auxiliar para obtener campos de tipo time de un documento
+func getTimeField(doc map[string]interface{}, field string) time.Time {
+	if val, ok := doc[field].(time.Time); ok {
+		return val
+	}
+	return time.Time{}
+}
+
 
 // Funcion auxiliar para obtener campos de tipo string de un documento
 func getStringField(doc map[string]interface{}, field string) string {

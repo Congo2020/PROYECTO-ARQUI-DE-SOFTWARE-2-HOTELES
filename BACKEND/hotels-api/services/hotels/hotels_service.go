@@ -63,6 +63,7 @@ func (service Service) GetHotelByID(ctx context.Context, id string) (hotelsDomai
 	return hotelsDomain.Hotel{
 		ID:        hotelDAO.ID,
 		Name:      hotelDAO.Name,
+		Description: hotelDAO.Description,
 		Address:   hotelDAO.Address,
 		City:      hotelDAO.City,
 		State:     hotelDAO.State,
@@ -75,6 +76,7 @@ func (service Service) GetHotelByID(ctx context.Context, id string) (hotelsDomai
 		CheckInTime: hotelDAO.CheckInTime,
 		CheckOutTime: hotelDAO.CheckOutTime,
 		Amenities: hotelDAO.Amenities,
+		Images:    hotelDAO.Images,
 	}, nil
 }
 
@@ -85,6 +87,7 @@ func (service Service) Create(ctx context.Context, hotel hotelsDomain.Hotel) (st
 	//Modelo de como viene -> modelo base de datos
 	record := hotelsDAO.Hotel{
 		Name:      hotel.Name,
+		Description: hotel.Description,
 		Address:   hotel.Address,
 		City:      hotel.City,
 		State:     hotel.State,
@@ -97,6 +100,7 @@ func (service Service) Create(ctx context.Context, hotel hotelsDomain.Hotel) (st
 		CheckInTime: hotel.CheckInTime,
 		CheckOutTime: hotel.CheckOutTime,
 		Amenities: hotel.Amenities,
+		Images:    hotel.Images,
 	}
 	// Crea el hotel en el repositorio principal (base de datos -> MongoDB)
 	id, err := service.mainRepository.Create(ctx, record)
@@ -126,6 +130,7 @@ func (service Service) Update(ctx context.Context, hotel hotelsDomain.Hotel) err
 	record := hotelsDAO.Hotel{
 		ID:        hotel.ID,
 		Name:      hotel.Name,
+		Description: hotel.Description,
 		Address:   hotel.Address,
 		City:      hotel.City,
 		State:     hotel.State,
@@ -138,6 +143,7 @@ func (service Service) Update(ctx context.Context, hotel hotelsDomain.Hotel) err
 		CheckInTime: hotel.CheckInTime,
 		CheckOutTime: hotel.CheckOutTime,
 		Amenities: hotel.Amenities,
+		Images:    hotel.Images,
 	}
 
 	// Actualiza el hotel en el repositorio principal (MongoDB)

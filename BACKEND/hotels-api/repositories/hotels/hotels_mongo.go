@@ -121,6 +121,9 @@ func (repository Mongo) Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 	if hotel.Address != "" {
 		update["address"] = hotel.Address
 	}
+	if hotel.Description != "" {
+		update["description"] = hotel.Description
+	}
 	if hotel.City != "" {
 		update["city"] = hotel.City
 	}
@@ -153,6 +156,9 @@ func (repository Mongo) Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 	}
 	if len(hotel.Amenities) > 0 { // Asumiendo que un slice vacio es el valor por defecto para Amenities
 		update["amenities"] = hotel.Amenities
+	}
+	if len(hotel.Images) > 0 { // Asumiendo que un slice vacio es el valor por defecto para Images
+		update["images"] = hotel.Images
 	}
 
 	// Actualiza el documento en MongoDB

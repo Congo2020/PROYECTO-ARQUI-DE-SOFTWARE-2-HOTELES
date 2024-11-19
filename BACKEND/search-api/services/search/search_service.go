@@ -48,6 +48,7 @@ func (service Service) Search(ctx context.Context, query string, offset int, lim
 		hotelsDomainList = append(hotelsDomainList, hotelsDomain.Hotel{
 			ID:        hotel.ID,
 			Name:      hotel.Name,
+			Description: hotel.Description,
 			Address:   hotel.Address,
 			City:      hotel.City,
 			State:     hotel.State,
@@ -60,6 +61,7 @@ func (service Service) Search(ctx context.Context, query string, offset int, lim
 			CheckInTime: hotel.CheckInTime,
 			CheckOutTime: hotel.CheckOutTime,
 			Amenities: hotel.Amenities,
+			Images:    hotel.Images,
 		})
 	}
 
@@ -84,6 +86,7 @@ func (service Service) HandleHotelNew(hotelNew hotelsDomain.HotelNew) {
 		hotelDAO := hotelsDAO.Hotel{
 			ID:        hotel.ID,
 			Name:      hotel.Name,
+			Description: hotel.Description,
 			Address:   hotel.Address,
 			City:      hotel.City,
 			State:     hotel.State,
@@ -96,6 +99,7 @@ func (service Service) HandleHotelNew(hotelNew hotelsDomain.HotelNew) {
 			CheckInTime: hotel.CheckInTime,
 			CheckOutTime: hotel.CheckOutTime,
 			Amenities: hotel.Amenities,
+			Images:    hotel.Images,
 		}
 
 		// Caso en el que se crea un hotel

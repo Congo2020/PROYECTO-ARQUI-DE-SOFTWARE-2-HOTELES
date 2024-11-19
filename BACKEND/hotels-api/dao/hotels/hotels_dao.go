@@ -5,6 +5,7 @@ import "time"
 type Hotel struct {
 	ID        string   `bson:"_id,omitempty"`
 	Name      string   `bson:"name"`
+	Description string `bson:"description"`
 	Address   string   `bson:"address"`
 	City      string   `bson:"city"`
 	State     string   `bson:"state"`
@@ -17,6 +18,7 @@ type Hotel struct {
 	CheckInTime time.Time `bson:"check_in_time"`
 	CheckOutTime time.Time `bson:"check_out_time"`
 	Amenities []string `bson:"amenities"`
+	Images    []string `bson:"images"`
 }
 
 type Reservation struct {

@@ -90,6 +90,9 @@ func (repository Cache) Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 	if hotel.Name != "" {
 		currentHotel.Name = hotel.Name
 	}
+	if hotel.Description != "" {
+		currentHotel.Description = hotel.Description
+	}
 	if hotel.Address != "" {
 		currentHotel.Address = hotel.Address
 	}
@@ -125,6 +128,9 @@ func (repository Cache) Update(ctx context.Context, hotel hotelsDAO.Hotel) error
 	}
 	if len(hotel.Amenities) > 0 {
 		currentHotel.Amenities = hotel.Amenities
+	}
+	if len(hotel.Images) > 0 {
+		currentHotel.Images = hotel.Images
 	}
 
 	// Guarda el hotel actualizado en la cache y reinicia el tiempo de expiracion
