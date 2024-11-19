@@ -1,18 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Cookies from 'universal-cookie';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
-
-const cookies = new Cookies();
 
 const Login = ({ token, setToken }) => {
     const navigate = useNavigate();
     const [register, setRegister] = useState(false);
-    const [formData, setFormData] = useState({
-        username: '',
-        password: ''
-    });
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -22,23 +17,24 @@ const Login = ({ token, setToken }) => {
         }
     }, [token, navigate]);
 
-    // Simplified input handler
-    const handleInputChange = useCallback((e) => {
+    const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        setError(''); // Clear error on input change
-    }, []);
-
-    const resetForm = useCallback(() => {
-        setFormData({ username: '', password: '' });
+        if (name === 'username') {
+            setUsername(value);
+        } else if (name === 'password') {
+            setPassword(value);
+        }
         setError('');
-    }, []);
+    };
+
+    const resetForm = () => {
+        setUsername('');
+        setPassword('');
+        setError('');
+    };
 
     const validateForm = () => {
-        if (!formData.username || !formData.password) {
+        if (!username || !password) {
             setError('Por favor complete todos los campos');
             return false;
         }
@@ -51,7 +47,10 @@ const Login = ({ token, setToken }) => {
         
         setLoading(true);
         try {
-            const response = await axios.post('http://localhost:8080/users', formData, {
+            const response = await axios.post('http://localhost:8080/users', {
+                username,
+                password
+            }, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -76,7 +75,10 @@ const Login = ({ token, setToken }) => {
     
         setLoading(true);
         try {
-            const response = await axios.post('http://localhost:8080/login', formData, {
+            const response = await axios.post('http://localhost:8080/login', {
+                username,
+                password
+            }, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -84,7 +86,7 @@ const Login = ({ token, setToken }) => {
     
             if (response.data.token) {
                 console.log('Login successful');
-                setToken(response.data.token); // handleSetToken manejará localStorage y cookies
+                setToken(response.data.token);
                 navigate('/');
             }
         } catch (error) {
@@ -114,7 +116,6 @@ const Login = ({ token, setToken }) => {
         </div>
     );
 
-
     const LoginForm = () => (
         <div className="login-container">
             <h1>Iniciar Sesión</h1>
@@ -124,7 +125,7 @@ const Login = ({ token, setToken }) => {
                     type="text"
                     name="username"
                     label="Usuario"
-                    value={formData.username}
+                    value={username}
                     onChange={handleInputChange}
                     disabled={loading}
                 />
@@ -132,13 +133,13 @@ const Login = ({ token, setToken }) => {
                     type="password"
                     name="password"
                     label="Contraseña"
-                    value={formData.password}
+                    value={password}
                     onChange={handleInputChange}
                     disabled={loading}
                 />
-                <button 
-                    type="submit" 
-                    disabled={loading || !formData.username || !formData.password}
+                <button
+                    type="submit"
+                    disabled={loading || !username || !password}
                     className="submit-button"
                 >
                     {loading ? 'Cargando...' : 'Iniciar Sesión'}
@@ -156,7 +157,7 @@ const Login = ({ token, setToken }) => {
                     type="text"
                     name="username"
                     label="Usuario"
-                    value={formData.username}
+                    value={username}
                     onChange={handleInputChange}
                     disabled={loading}
                 />
@@ -164,13 +165,13 @@ const Login = ({ token, setToken }) => {
                     type="password"
                     name="password"
                     label="Contraseña"
-                    value={formData.password}
+                    value={password}
                     onChange={handleInputChange}
                     disabled={loading}
                 />
                 <button 
                     type="submit" 
-                    disabled={loading || !formData.username || !formData.password}
+                    disabled={loading || !username || !password}
                     className="submit-button"
                 >
                     {loading ? 'Cargando...' : 'Crear Usuario'}

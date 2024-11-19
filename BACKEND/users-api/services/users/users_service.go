@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"log"
 	dao "users-api/dao/users"
 	domain "users-api/domain/users"
 )
@@ -212,9 +213,11 @@ func (service Service) Login(username string, password string) (domain.LoginResp
 	// Try to get user from cache repository first
 	user, err := service.cacheRepository.GetByUsername(username)
 	if err != nil {
+		log.Printf("error getting user by username from cache repository: %v", err) // Log the error
 		// If not found in cache, try to get user from memcached repository
 		user, err = service.memcachedRepository.GetByUsername(username)
 		if err != nil {
+			log.Printf("error getting user by username from cache repository: %v", err) // Log the error
 			// If not found in memcached, try to get user from the main repository (database)
 			user, err = service.mainRepository.GetByUsername(username)
 			if err != nil {
@@ -223,19 +226,23 @@ func (service Service) Login(username string, password string) (domain.LoginResp
 
 			// Save the found user in both cache and memcached repositories
 			if _, err := service.cacheRepository.Create(user); err != nil {
+				log.Printf("error getting user by username from cache repository: %v", err) // Log the error
 				return domain.LoginResponse{}, fmt.Errorf("error caching user in cache repository: %w", err)
 			}
 			if _, err := service.memcachedRepository.Create(user); err != nil {
+				log.Printf("error getting user by username from cache repository: %v", err) // Log the error
 				return domain.LoginResponse{}, fmt.Errorf("error caching user in memcached repository: %w", err)
 			}
 		} else {
 			// Save the found user in the cache repository for future access
 			if _, err := service.cacheRepository.Create(user); err != nil {
+				log.Printf("error getting user by username from cache repository: %v", err) // Log the error
 				return domain.LoginResponse{}, fmt.Errorf("error caching user in cache repository: %w", err)
 			}
 		}
+	} else {
+		log.Printf("Se encontro el usuario en la cache")
 	}
-
 	// Compare passwords
 	if user.Password != passwordHash {
 		return domain.LoginResponse{}, fmt.Errorf("invalid credentials")
