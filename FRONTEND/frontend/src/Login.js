@@ -86,7 +86,7 @@ const Login = ({ token, setToken }) => {
                 // Add console.log to debug
                 console.log('Login successful, token:', response.data.token);
                 setToken(response.data.token);
-                cookies.set('rol', response.data.role, { path: '/' });
+                cookies.set("token", response.data.token, { path: "/" });
                 navigate('/');
             }
         } catch (error) {
