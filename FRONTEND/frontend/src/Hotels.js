@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "./Hotels.css";
-import { useNavigate } from "react-router-dom"; // Importar useNavigate
-import  {jwtDecode} from "jwt-decode";
+import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import Cookies from "universal-cookie";
-
 
 const Hotels = ({ token }) => {
   const [hotels, setHotels] = useState([]); // Lista de hoteles
@@ -16,14 +15,12 @@ const Hotels = ({ token }) => {
   const [hotelToReserve, setHotelToReserve] = useState(null); // Guardamos el hotel seleccionado
   const navigate = useNavigate(); // Usar el hook useNavigate
 
-  
   const cookies = new Cookies();
   const token1 = cookies.get("token");
-const decodedToken =  jwtDecode(token1);
-const userID = decodedToken.user_id;
-const username = decodedToken.username;
-console.log("User ID desde el token:", userID);
+  const decodedToken = jwtDecode(token1);
+  const userID = decodedToken.user_id;
 
+  console.log("User ID desde el token:", userID);
 
   // Buscar hoteles
   const fetchHotels = async () => {
@@ -56,29 +53,28 @@ console.log("User ID desde el token:", userID);
     }
 
     // Encontrar el nombre del hotel usando el hotelToReserve
-    const selectedHotel = hotels.find(hotel => hotel.id === hotelToReserve);
+    const selectedHotel = hotels.find((hotel) => hotel.id === hotelToReserve);
 
-    // Asegurarse de que encontramos el hotel
     if (!selectedHotel) {
       setReservationStatus("No se encontró el hotel seleccionado.");
       return;
     }
 
     try {
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:8081/hotels/reservations",
         {
           hotel_id: hotelToReserve,
-          hotel_name: selectedHotel.name, // Añadimos el nombre del hotel aquí
-          user_id: String(userID), // Reemplazar con el ID de usuario real
+          hotel_name: selectedHotel.name,
+          user_id: String(userID),
           check_in: checkIn,
-          check_out: checkOut
+          check_out: checkOut,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setReservationStatus("Reserva realizada con éxito!");
-      setShowConfirmModal(false); // Cerrar el modal
+      setShowConfirmModal(false);
     } catch (err) {
       console.error("Error reservando hotel:", err);
       setReservationStatus("Error al realizar la reserva. Intente de nuevo.");
@@ -87,8 +83,8 @@ console.log("User ID desde el token:", userID);
 
   // Mostrar el modal de confirmación
   const handleReserve = (hotelId) => {
-    setHotelToReserve(hotelId); // Guardamos el hotel que el usuario quiere reservar
-    setShowConfirmModal(true); // Mostramos el modal
+    setHotelToReserve(hotelId);
+    setShowConfirmModal(true);
   };
 
   // Cerrar el modal
@@ -96,9 +92,14 @@ console.log("User ID desde el token:", userID);
     setShowConfirmModal(false);
   };
 
-  // Función para navegar hacia atrás
+  // Navegar hacia atrás
   const handleGoBack = () => {
-    navigate(-1); // Esto hace que el navegador vuelva a la página anterior
+    navigate(-1);
+  };
+
+  // Función para redirigir a la página de detalles del hotel
+  const handleViewDetails = (hotelId) => {
+    navigate(`/hotels/${hotelId}`);
   };
 
   return (
@@ -141,7 +142,21 @@ console.log("User ID desde el token:", userID);
               <h3>{hotel.name}</h3>
               <p>{hotel.address}, {hotel.city}</p>
               <p>Precio: ${hotel.price}</p>
+
+              {/* Mostrar imágenes del hotel */}
+              <div className="hotel-images">
+                {hotel.images?.map((image, index) => (
+                  <img
+                    key={index}
+                    src={image}
+                    alt={`Imagen ${index + 1} de ${hotel.name}`}
+                    className="hotel-image"
+                  />
+                ))}
+              </div>
+
               <button onClick={() => handleReserve(hotel.id)}>Reservar</button>
+              <button onClick={() => handleViewDetails(hotel.id)}>Ver más</button>
             </li>
           ))
         )}

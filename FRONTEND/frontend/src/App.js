@@ -4,6 +4,7 @@ import Login from "./Login";
 import Home from "./Home";
 import Hotels from "./Hotels";
 import Bookings from "./Bookings";
+import HotelDetails from "./HotelsDetails"; // Importamos el componente de detalles del hotel
 
 function App() {
   const [token, setToken] = useState(null);
@@ -36,6 +37,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Hotels token={token} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hotels/:id"
+          element={
+            <ProtectedRoute>
+              <HotelDetails token={token} />
             </ProtectedRoute>
           }
         />

@@ -100,3 +100,19 @@ body {
     background-color: #0056b3;
     transition: background-color 0.3s ease;
   }
+
+  /* Hotels.css */
+.hotel-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.hotel-images img {
+  width: 100px; /* Tamaño pequeño */
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin: 5px;
+}
