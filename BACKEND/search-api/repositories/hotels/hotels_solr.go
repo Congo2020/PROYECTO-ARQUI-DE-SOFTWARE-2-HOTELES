@@ -173,7 +173,7 @@ func (searchEngine Solr) Delete(ctx context.Context, id string) error {
 // Funcion para buscar hoteles en Solr
 func (searchEngine Solr) Search(ctx context.Context, query string, limit int, offset int) ([]hotels.Hotel, error) {
 	// Construye la query de busqueda
-	solrQuery := fmt.Sprintf("q=(name:%s)&rows=%d&start=%d", query, limit, offset)
+	solrQuery := fmt.Sprintf("q=(name:%s OR description:%s)&rows=%d&start=%d", query, query, limit, offset)
 
 	// Ejecuta la query en Solr
 	resp, err := searchEngine.Client.Query(ctx, searchEngine.Collection, solr.NewQuery(solrQuery))
