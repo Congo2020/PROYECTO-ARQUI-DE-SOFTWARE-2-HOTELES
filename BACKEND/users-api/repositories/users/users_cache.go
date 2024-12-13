@@ -2,9 +2,10 @@ package users
 
 import (
 	"fmt"
-	"github.com/karlseguin/ccache"
 	"time"
 	"users-api/dao/users"
+
+	"github.com/karlseguin/ccache"
 )
 
 type CacheConfig struct {

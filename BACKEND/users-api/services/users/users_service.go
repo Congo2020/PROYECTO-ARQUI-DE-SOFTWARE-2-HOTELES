@@ -50,6 +50,7 @@ func (service Service) GetAll() ([]domain.User, error) {
 			ID:       user.ID,
 			Username: user.Username,
 			Password: user.Password,
+			Admin:    user.Admin,
 		})
 	}
 
@@ -126,9 +127,11 @@ func (service Service) Create(user domain.User) (int64, error) {
 	// Hash the password
 	passwordHash := Hash(user.Password)
 
+	// Convert domain.User to dao.User
 	newUser := dao.User{
 		Username: user.Username,
 		Password: passwordHash,
+		Admin:    user.Admin,
 	}
 
 	// Create in main repository
@@ -167,6 +170,7 @@ func (service Service) Update(user domain.User) error {
 		ID:       user.ID,
 		Username: user.Username,
 		Password: passwordHash,
+		Admin:    user.Admin,
 	})
 	if err != nil {
 		return fmt.Errorf("error updating user: %w", err)
@@ -177,6 +181,7 @@ func (service Service) Update(user domain.User) error {
 		ID:       user.ID,
 		Username: user.Username,
 		Password: passwordHash,
+		Admin:    user.Admin,
 	}
 	if err := service.cacheRepository.Update(updatedUser); err != nil {
 		return fmt.Errorf("error updating user in cache: %w", err)
@@ -272,5 +277,6 @@ func (service Service) convertUser(user dao.User) domain.User {
 		ID:       user.ID,
 		Username: user.Username,
 		Password: user.Password,
+		Admin:    user.Admin,
 	}
 }

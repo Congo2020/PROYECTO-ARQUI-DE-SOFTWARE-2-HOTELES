@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bradfitz/gomemcache/memcache"
 	"users-api/dao/users"
+
+	"github.com/bradfitz/gomemcache/memcache"
 )
 
 type MemcachedConfig struct {

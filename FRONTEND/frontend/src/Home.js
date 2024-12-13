@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import './Home.css';
 
-const Home = ({ token, setToken }) => {
+const Home = ({ token, setToken, isAdmin }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -19,6 +19,7 @@ const Home = ({ token, setToken }) => {
       <h1>Bienvenido a la Gestión de Hoteles</h1>
       <div className="welcome-content">
         <p>Has iniciado sesión con éxito.</p>
+        {isAdmin && <p className="admin-welcome">Bienvenido, Administrador</p>}
         <p className="token-info">Token: {token.slice(0, 20)}...</p>
         <div className="dashboard">
           <h2>Panel de Control</h2>
@@ -31,6 +32,12 @@ const Home = ({ token, setToken }) => {
               <h3>Hoteles</h3>
               <p>Buscar y explorar hoteles disponibles.</p>
             </div>
+            {isAdmin && (
+              <div className="card" onClick={() => navigate('/admin/hotels')}>
+                <h3>Crear Hotel</h3>
+                <p>Crear y gestionar hoteles.</p>
+              </div>
+            )}
           </div>
         </div>
         <button className="logout-button" onClick={handleLogout}>
